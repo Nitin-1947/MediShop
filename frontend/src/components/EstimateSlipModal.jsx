@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
-  CuteScannerMascot, 
-  DrPillMascot 
-} from './CartoonMascots';
-import { 
   Clock, 
   CheckCircle2, 
   MapPin, 
   Phone, 
   ShieldCheck, 
-  Share2, 
-  Printer, 
   X, 
   ArrowRight,
-  Sparkles,
-  QrCode
+  QrCode,
+  Building2
 } from 'lucide-react';
-import { playPop, playSuccessChime } from '../utils/audio';
+import { playPop } from '../utils/audio';
 
 export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChemistScanner }) {
   const [secondsRemaining, setSecondsRemaining] = useState(60 * 60);
@@ -25,7 +19,6 @@ export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChe
   useEffect(() => {
     if (!estimate) return;
     
-    // Calculate remaining seconds
     const exp = new Date(estimate.expires_at).getTime();
     const updateCountdown = () => {
       const now = Date.now();
@@ -54,113 +47,101 @@ export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="cartoon-card bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 space-y-5 relative border-4 border-slate-900 shadow-cartoon-lg">
+      <div className="clinical-card bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 space-y-5 relative">
         {/* Close Button */}
         <button
           onClick={() => { playPop(); onClose(); }}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 border-2 border-slate-900 flex items-center justify-center font-black text-slate-900 transition-transform active:scale-90"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {/* Top Header */}
         <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-mint-100 border-2 border-slate-900 rounded-full text-xs font-black text-mint-800 shadow-cartoon-sm">
-            <Sparkles className="w-4 h-4 text-mint-600" />
-            Locked-In Digital Estimate Slip
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 border border-teal-200 rounded-full text-xs font-semibold text-teal-800">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+            Verified Price-Lock Guarantee
           </div>
-          <h3 className="text-2xl font-black text-slate-900">
-            60-Minute Counter Reservation 🎟️
+          <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+            60-Minute Counter Reservation Slip
           </h3>
-          <p className="text-xs text-slate-500 font-semibold">
-            Show this QR code at the pharmacy counter to get your locked discount.
+          <p className="text-xs text-slate-500 font-medium">
+            Present this QR code at the pharmacy counter to collect reserved stock at quoted rates.
           </p>
         </div>
 
         {/* 60-Minute Countdown Timer Widget */}
-        <div className={`cartoon-card p-4 text-center border-2 flex items-center justify-between ${
-          secondsRemaining > 300 ? 'bg-bubble-50 border-bubble-400' : 'bg-red-50 border-red-500'
+        <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+          secondsRemaining > 300 ? 'bg-teal-50/60 border-teal-200' : 'bg-rose-50 border-rose-200'
         }`}>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white border-2 border-slate-900">
-              <Clock className="w-5 h-5 text-bubble-600 animate-spin" />
+            <div className="p-2 rounded-lg bg-white border border-teal-200 text-teal-700">
+              <Clock className="w-4 h-4" />
             </div>
-            <div className="text-left">
-              <div className="text-[11px] font-black uppercase text-slate-500">Price Lock Guarantee</div>
-              <div className="text-xs font-bold text-slate-800">Reservation active for:</div>
+            <div>
+              <div className="text-[10px] font-bold uppercase text-slate-400">Lock Guarantee Window</div>
+              <div className="text-xs font-semibold text-slate-700">Expires in:</div>
             </div>
           </div>
-          <div className="text-2xl font-black font-mono text-slate-900 bg-white px-3 py-1 rounded-xl border-2 border-slate-900 shadow-cartoon-sm">
+          <div className="text-xl font-bold font-mono text-slate-900 bg-white px-3 py-1 rounded-lg border border-slate-200">
             {formattedTimer}
           </div>
         </div>
 
-        {/* Scannable QR Code Card */}
-        <div className="cartoon-card p-5 bg-gradient-to-b from-sunny-50 to-white text-center space-y-3 border-2 border-sunny-400">
-          <div className="p-4 bg-white rounded-2xl border-2 border-slate-900 shadow-cartoon-sm inline-block">
+        {/* QR Code Container */}
+        <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-3">
+          <div className="p-3 bg-white rounded-xl border border-slate-200 inline-block shadow-xs">
             <QRCodeSVG 
               value={qrPayload}
-              size={180}
+              size={160}
               level="H"
               includeMargin={false}
               fgColor="#0F172A"
             />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500">Token ID:</div>
-            <div className="text-lg font-black font-mono text-bubble-600 tracking-wider">
+            <div className="text-xs text-slate-400 font-semibold">Estimate Token ID</div>
+            <div className="text-base font-bold font-mono text-teal-700">
               {estimate.id}
             </div>
-          </div>
-          <div className="text-xs text-slate-600 font-bold">
-            Scan with countertop scanner or Chemist Dashboard
           </div>
         </div>
 
         {/* Pharmacy Details */}
-        <div className="cartoon-card p-4 bg-slate-50 space-y-2 text-xs">
-          <div className="font-black text-slate-900 text-sm flex items-center justify-between">
+        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+          <div className="font-bold text-slate-900 flex items-center justify-between">
             <span>{estimate.store_name}</span>
-            <span className="cartoon-badge bg-mint-200 text-mint-800 text-[10px]">Verified Store</span>
+            <span className="text-[10px] text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+              Verified Retailer
+            </span>
           </div>
-          <div className="text-slate-600 flex items-center gap-1.5 font-semibold">
+          <div className="text-slate-500 flex items-center gap-1.5 font-medium">
             <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {estimate.store_address}
           </div>
-          <div className="text-slate-600 flex items-center gap-1.5 font-semibold">
+          <div className="text-slate-500 flex items-center gap-1.5 font-medium">
             <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {estimate.store_phone} • DL No: {estimate.license_number}
           </div>
         </div>
 
-        {/* Regulatory Schedule Compliance Badge */}
-        {estimate.schedule_compliance?.has_schedule_h && (
-          <div className="p-3 bg-lavender-50 rounded-xl border-2 border-slate-900 flex items-center gap-2.5 text-xs font-semibold text-lavender-900">
-            <ShieldCheck className="w-5 h-5 text-lavender-600 shrink-0" />
-            <div>
-              <span className="font-black">Schedule H Verification Attached: </span>
-              {estimate.schedule_compliance.doctor_name} ({estimate.schedule_compliance.rx_id})
-            </div>
-          </div>
-        )}
-
         {/* Itemized Locked Bill */}
         <div className="space-y-2">
-          <div className="text-xs font-black text-slate-700 uppercase tracking-wider">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
             Reserved Items ({estimate.items.length}):
           </div>
-          <div className="divide-y divide-slate-200 border-2 border-slate-900 rounded-xl overflow-hidden bg-white text-xs">
+          <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white text-xs">
             {estimate.items.map((item, idx) => (
               <div key={idx} className="p-3 flex items-center justify-between">
                 <div>
-                  <div className="font-black text-slate-900">{item.brand_name}</div>
-                  <div className="text-[11px] text-slate-500 font-bold">
+                  <div className="font-bold text-slate-900">{item.brand_name}</div>
+                  <div className="text-[11px] text-slate-400">
                     Qty: {item.qty} strip • MRP ₹{item.mrp} (-{item.discount_pct}% OFF)
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-black text-slate-900">₹{item.total_price}</div>
-                  <div className="text-[10px] text-mint-600 font-bold">
+                  <div className="font-bold font-mono text-slate-900">₹{item.total_price}</div>
+                  <div className="text-[10px] text-emerald-700 font-medium">
                     Save ₹{(item.mrp * item.qty - item.total_price).toFixed(2)}
                   </div>
                 </div>
@@ -170,35 +151,33 @@ export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChe
         </div>
 
         {/* Summary Totals */}
-        <div className="p-4 bg-bubble-50 rounded-2xl border-2 border-slate-900 space-y-1.5 text-xs">
-          <div className="flex justify-between font-bold text-slate-600">
+        <div className="p-4 bg-teal-50/60 rounded-xl border border-teal-200 space-y-1.5 text-xs">
+          <div className="flex justify-between text-slate-500 font-medium">
             <span>Total Retail MRP:</span>
             <span>₹{estimate.total_mrp}</span>
           </div>
-          <div className="flex justify-between font-bold text-mint-600">
+          <div className="flex justify-between text-emerald-700 font-semibold">
             <span>Total Locked Savings:</span>
             <span>- ₹{estimate.total_savings}</span>
           </div>
-          <div className="flex justify-between font-black text-base text-slate-900 pt-2 border-t-2 border-slate-900">
-            <span>Locked Counter Payable:</span>
-            <span className="text-bubble-600">₹{estimate.total_discounted_price}</span>
+          <div className="flex justify-between font-bold text-sm text-slate-900 pt-1.5 border-t border-teal-200">
+            <span>Counter Payable:</span>
+            <span className="text-teal-800 text-base font-mono">₹{estimate.total_discounted_price}</span>
           </div>
         </div>
 
-        {/* Quick Simulation Link for User / Evaluator */}
-        <div className="pt-2">
-          <button
-            onClick={() => {
-              playPop();
-              onOpenChemistScanner(estimate.id);
-            }}
-            className="w-full cartoon-btn cartoon-btn-sunny py-3 text-sm shadow-cartoon-hover"
-          >
-            <QrCode className="w-5 h-5" />
-            <span>Simulate: Scan this QR in Chemist Counter Dashboard</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Quick Simulation Link */}
+        <button
+          onClick={() => {
+            playPop();
+            onOpenChemistScanner(estimate.id);
+          }}
+          className="w-full clinical-btn-primary py-2.5 text-xs"
+        >
+          <QrCode className="w-4 h-4" />
+          <span>Simulate: Scan this Token in Chemist Dashboard</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

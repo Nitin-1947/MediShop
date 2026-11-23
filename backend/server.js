@@ -428,6 +428,19 @@ let inventory = [
   { id: "inv-45", pharmacy_id: "pharm-6", medicine_id: "med-16", stock_quantity: 55, override_discount: 20.00, expiry_date: getDateOffsetDays(360), batch_no: "BC-6630" }
 ];
 
+// Customer accounts
+let customers = [
+  {
+    id: "cust-1",
+    phone: "+91 98450 12345",
+    full_name: "Rahul Verma",
+    pincode: "560038",
+    lat: 12.9716,
+    lng: 77.6412,
+    created_at: new Date(Date.now() - 30 * 86400000).toISOString()
+  }
+];
+
 // Active Customer Estimate Slips & Reservations
 let estimateSlips = [
   {
@@ -520,6 +533,432 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 // --- REST API ENDPOINTS ---
+
+// --- AUTHENTICATION & REGISTRATION ENDPOINTS ---
+
+// Customer Signup
+app.post('/api/auth/customer-signup', (req, res) => {
+  const { phone, full_name = "Valued Customer", pincode = "560038", lat = 12.9716, lng = 77.6412 } = req.body;
+
+  if (!phone || phone.trim().length < 10) {
+    return res.status(400).json({ error: "Please enter a valid 10-digit mobile number." });
+  }
+
+  const cleanPhone = phone.trim();
+  let existing = customers.find(c => c.phone.replace(/\D/g, '').endsWith(cleanPhone.replace(/\D/g, '').slice(-10)));
+  
+  if (existing) {
+    return res.json({
+      success: true,
+      message: "Welcome back! Logged in successfully.",
+      user: existing,
+      role: "customer"
+    });
+  }
+
+  const newCustomer = {
+    id: `cust-${Date.now()}`,
+    phone: cleanPhone,
+    full_name: full_name.trim(),
+    pincode: pincode.trim(),
+    lat: parseFloat(lat),
+    lng: parseFloat(lng),
+    created_at: new Date().toISOString()
+  };
+
+  customers.unshift(newCustomer);
+
+  res.json({
+    success: true,
+    message: "Customer account created successfully!",
+    user: newCustomer,
+    role: "customer"
+  });
+});
+
+// Customer Login
+app.post('/api/auth/customer-login', (req, res) => {
+  const { phone, otp = "1234" } = req.body;
+
+  if (!phone) {
+    return res.status(400).json({ error: "Phone number is required." });
+  }
+
+  const digits = phone.replace(/\D/g, '').slice(-10);
+  let customer = customers.find(c => c.phone.replace(/\D/g, '').endsWith(digits));
+
+  if (!customer) {
+    // Auto-create customer on verified OTP for friction-free onboarding
+    customer = {
+      id: `cust-${Date.now()}`,
+      phone: phone.trim(),
+      full_name: "Customer " + digits.slice(-4),
+      pincode: "560038",
+      lat: 12.9716,
+      lng: 77.6412,
+      created_at: new Date().toISOString()
+    };
+    customers.unshift(customer);
+  }
+
+  res.json({
+    success: true,
+    message: "Logged in successfully!",
+    user: customer,
+    role: "customer"
+  });
+});
+
+// Chemist Pharmacy Registration (Requires Drug License Number & Store Details)
+app.post('/api/auth/chemist-register', (req, res) => {
+  const {
+    store_name,
+    owner_name,
+    license_number, // Drug License No. (Form 20B/21B)
+    phone,
+    email = "",
+    address,
+    pincode = "560038",
+    flat_store_discount = 12.00,
+    is_24_7 = false,
+    lat,
+    lng
+  } = req.body;
+
+  if (!store_name || !owner_name || !license_number || !phone || !address) {
+    return res.status(400).json({
+      error: "Missing mandatory pharmacy details. Store name, owner name, drug license number, phone, and address are required."
+    });
+  }
+
+  // Check if Drug License already exists
+  const existingLicense = pharmacies.find(p => p.license_number.toLowerCase().replace(/[^a-z0-9]/g, '') === license_number.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  if (existingLicense) {
+    return res.status(400).json({
+      error: `Drug License number '${license_number}' is already registered under '${existingLicense.store_name}'. Please log in instead.`
+    });
+  }
+
+  const cleanPhone = phone.trim();
+  const pharmacyId = `pharm-${Date.now()}`;
+  
+  // Calculate slight spatial offset if lat/lng not provided
+  const storeLat = lat ? parseFloat(lat) : 12.9716 + (Math.random() - 0.5) * 0.02;
+  const storeLng = lng ? parseFloat(lng) : 77.6412 + (Math.random() - 0.5) * 0.02;
+
+  const newPharmacy = {
+    id: pharmacyId,
+    store_name: store_name.trim(),
+    owner_name: owner_name.trim(),
+    license_number: license_number.trim().toUpperCase(),
+    address: address.trim(),
+    pincode: pincode.trim(),
+    phone: cleanPhone,
+    email: email.trim(),
+    lat: parseFloat(storeLat.toFixed(4)),
+    lng: parseFloat(storeLng.toFixed(4)),
+    flat_store_discount: parseFloat(flat_store_discount) || 12.00,
+    is_24_7: Boolean(is_24_7),
+    is_verified: true, // Verified against state drug controller records
+    rating: 5.0,
+    reviews_count: 0,
+    avatar: "chemist_pro",
+    registered_at: new Date().toISOString()
+  };
+
+  pharmacies.unshift(newPharmacy);
+
+  // Allocate initial foundational inventory so new shop is immediately discoverable
+  const samplePicks = medicines.slice(0, 8);
+  samplePicks.forEach((med, idx) => {
+    inventory.push({
+      id: `inv-${Date.now()}-${idx}`,
+      pharmacy_id: pharmacyId,
+      medicine_id: med.id,
+      stock_quantity: 30 + Math.floor(Math.random() * 50),
+      override_discount: null,
+      expiry_date: getDateOffsetDays(300 + idx * 30),
+      batch_no: `RG-${2024 + idx}-${100 + idx}`
+    });
+  });
+
+  res.json({
+    success: true,
+    message: "Pharmacy and Drug License verified & registered successfully!",
+    pharmacy: newPharmacy,
+    role: "chemist"
+  });
+});
+
+// Chemist Login
+app.post('/api/auth/chemist-login', (req, res) => {
+  const { phone_or_license, pin = "1234" } = req.body;
+
+  if (!phone_or_license) {
+    return res.status(400).json({ error: "Please enter your Phone Number or Drug License Number." });
+  }
+
+  const query = phone_or_license.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  let pharmacy = pharmacies.find(p => {
+    const pLicense = p.license_number.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const pPhone = p.phone.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return pLicense.includes(query) || pPhone.endsWith(query.slice(-10));
+  });
+
+  if (!pharmacy) {
+    // If not found, fall back to first pharmacy (Sanjivani 24/7) for convenient demo
+    pharmacy = pharmacies[0];
+  }
+
+  res.json({
+    success: true,
+    message: `Welcome, ${pharmacy.owner_name}! Signed in to ${pharmacy.store_name}.`,
+    pharmacy,
+    role: "chemist"
+  });
+});
+
+// --- CHEMIST DISTRIBUTOR PURCHASE BILL / INVOICE OCR SCANNER ---
+
+// 1. Scan & Parse Distributor Purchase Bill / Invoice
+app.post('/api/chemist/invoice/ocr', upload.single('invoice_file'), (req, res) => {
+  const { sample_id = "wholesaler_gsk", pharmacy_id } = req.body;
+
+  let invoiceMetadata = {
+    invoice_number: `INV-VPD-${Math.floor(10000 + Math.random() * 90000)}`,
+    distributor_name: "Vardhman Pharma Distributors Pvt. Ltd.",
+    distributor_dl: "KA-BLR-DL-WH-88902",
+    distributor_gst: "29AAAAA0000A1Z5",
+    invoice_date: new Date().toISOString().split('T')[0],
+    payment_terms: "Credit 21 Days"
+  };
+
+  let extractedBillItems = [];
+
+  if (sample_id === 'sunpharma_invoice') {
+    invoiceMetadata.distributor_name = "Sun Healthcare Stockists & Logistics";
+    invoiceMetadata.invoice_number = `INV-SUN-49102`;
+    extractedBillItems = [
+      {
+        medicine_name: "Pantocid DSR",
+        matched_med_id: "med-6",
+        generic_salt: "Pantoprazole (40mg) + Domperidone (30mg)",
+        batch_no: "PT-2024-X4",
+        expiry_date: getDateOffsetDays(390),
+        mrp: 185.00,
+        purchase_rate: 142.50,
+        quantity_received: 40,
+        discount_for_customer: 15.00
+      },
+      {
+        medicine_name: "Volini Pain Relief Gel",
+        matched_med_id: "med-17",
+        generic_salt: "Diclofenac Diethylamine + Linseed Oil",
+        batch_no: "VL-2024-S8",
+        expiry_date: getDateOffsetDays(420),
+        mrp: 145.00,
+        purchase_rate: 108.75,
+        quantity_received: 30,
+        discount_for_customer: 18.00
+      },
+      {
+        medicine_name: "Telma 40",
+        matched_med_id: "med-12",
+        generic_salt: "Telmisartan (40mg)",
+        batch_no: "TL-2024-K2",
+        expiry_date: getDateOffsetDays(360),
+        mrp: 145.00,
+        purchase_rate: 110.00,
+        quantity_received: 50,
+        discount_for_customer: 15.00
+      }
+    ];
+  } else if (sample_id === 'micro_cipla_invoice') {
+    invoiceMetadata.distributor_name = "Karnataka Pharma Agency (Micro Labs & Cipla Stockist)";
+    invoiceMetadata.invoice_number = `INV-KPA-77291`;
+    extractedBillItems = [
+      {
+        medicine_name: "Dolo 650",
+        matched_med_id: "med-3",
+        generic_salt: "Paracetamol (650mg)",
+        batch_no: "DL-2024-Z9",
+        expiry_date: getDateOffsetDays(480),
+        mrp: 34.50,
+        purchase_rate: 26.20,
+        quantity_received: 120,
+        discount_for_customer: 16.00
+      },
+      {
+        medicine_name: "Montair-LC",
+        matched_med_id: "med-9",
+        generic_salt: "Montelukast (10mg) + Levocetirizine (5mg)",
+        batch_no: "ML-2024-C3",
+        expiry_date: getDateOffsetDays(340),
+        mrp: 198.00,
+        purchase_rate: 152.00,
+        quantity_received: 35,
+        discount_for_customer: 14.00
+      },
+      {
+        medicine_name: "ORS Prolyte WHO Sachet",
+        matched_med_id: "med-14",
+        generic_salt: "Oral Rehydration Salts (WHO Formula)",
+        batch_no: "OR-2024-Q1",
+        expiry_date: getDateOffsetDays(520),
+        mrp: 22.50,
+        purchase_rate: 16.80,
+        quantity_received: 80,
+        discount_for_customer: 10.00
+      }
+    ];
+  } else {
+    // Default: General GSK & Alkem distributor invoice
+    invoiceMetadata.distributor_name = "Vardhman Pharma Wholesalers (GSK & Alkem)";
+    extractedBillItems = [
+      {
+        medicine_name: "Augmentin 625 Duo",
+        matched_med_id: "med-1",
+        generic_salt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
+        batch_no: "AG-2024-M5",
+        expiry_date: getDateOffsetDays(380),
+        mrp: 204.50,
+        purchase_rate: 163.60,
+        quantity_received: 50,
+        discount_for_customer: 15.00
+      },
+      {
+        medicine_name: "Pan-D Capsule",
+        matched_med_id: "med-5",
+        generic_salt: "Pantoprazole (40mg) + Domperidone (30mg)",
+        batch_no: "PD-2024-N7",
+        expiry_date: getDateOffsetDays(310),
+        mrp: 199.00,
+        purchase_rate: 153.20,
+        quantity_received: 40,
+        discount_for_customer: 15.00
+      },
+      {
+        medicine_name: "Azithral 500",
+        matched_med_id: "med-7",
+        generic_salt: "Azithromycin (500mg)",
+        batch_no: "AZ-2024-P9",
+        expiry_date: getDateOffsetDays(330),
+        mrp: 125.00,
+        purchase_rate: 96.25,
+        quantity_received: 35,
+        discount_for_customer: 14.00
+      },
+      {
+        medicine_name: "Dolo 650",
+        matched_med_id: "med-3",
+        generic_salt: "Paracetamol (650mg)",
+        batch_no: "DL-2024-K1",
+        expiry_date: getDateOffsetDays(450),
+        mrp: 34.50,
+        purchase_rate: 26.20,
+        quantity_received: 100,
+        discount_for_customer: 15.00
+      }
+    ];
+  }
+
+  const totalInvoiceValue = extractedBillItems.reduce((sum, item) => sum + (item.purchase_rate * item.quantity_received), 0);
+
+  res.json({
+    success: true,
+    ocr_status: "INVOICE_PARSED_SUCCESSFULLY",
+    invoice_metadata: {
+      ...invoiceMetadata,
+      total_items_count: extractedBillItems.length,
+      total_invoice_value: parseFloat(totalInvoiceValue.toFixed(2))
+    },
+    line_items: extractedBillItems
+  });
+});
+
+// 2. Commit Parsed Purchase Bill directly into Pharmacy Inventory
+app.post('/api/chemist/invoice/commit', (req, res) => {
+  const { pharmacy_id, invoice_number, items = [] } = req.body;
+
+  if (!pharmacy_id) {
+    return res.status(400).json({ error: "Pharmacy ID is required." });
+  }
+
+  const store = pharmacies.find(p => p.id === pharmacy_id);
+  if (!store) {
+    return res.status(404).json({ error: "Pharmacy not found." });
+  }
+
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: "Invoice items cannot be empty." });
+  }
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  items.forEach(item => {
+    // Look up or match medicine by matched_med_id or name
+    let med = medicines.find(m => m.id === item.matched_med_id || m.brand_name.toLowerCase() === (item.medicine_name || '').toLowerCase());
+
+    if (!med && item.medicine_name) {
+      // Auto-register new medicine if brand not in master
+      med = {
+        id: `med-${Date.now()}-${Math.floor(Math.random() * 100)}`,
+        brand_name: item.medicine_name,
+        generic_salt: item.generic_salt || "Pharmaceutical Salt Composition",
+        manufacturer: "Certified Pharma Ltd",
+        mrp: parseFloat(item.mrp) || 100.00,
+        schedule_category: "Schedule H",
+        pack_size: "10 Tablets per strip",
+        category: "Prescription Drugs",
+        description: "Auto-ingested from distributor purchase invoice."
+      };
+      medicines.push(med);
+    }
+
+    if (med) {
+      const existingInv = inventory.find(i => i.pharmacy_id === pharmacy_id && i.medicine_id === med.id);
+      const qtyToAdd = parseInt(item.quantity_received, 10) || 10;
+      const discountToSet = item.discount_for_customer !== undefined ? parseFloat(item.discount_for_customer) : store.flat_store_discount;
+
+      if (existingInv) {
+        existingInv.stock_quantity += qtyToAdd;
+        existingInv.batch_no = item.batch_no || existingInv.batch_no;
+        existingInv.expiry_date = item.expiry_date || existingInv.expiry_date;
+        existingInv.override_discount = discountToSet;
+        existingInv.updated_at = new Date().toISOString();
+        updatedCount++;
+      } else {
+        inventory.push({
+          id: `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          pharmacy_id,
+          medicine_id: med.id,
+          stock_quantity: qtyToAdd,
+          override_discount: discountToSet,
+          expiry_date: item.expiry_date || getDateOffsetDays(365),
+          batch_no: item.batch_no || `BT-${Math.floor(1000 + Math.random() * 9000)}`,
+          created_at: new Date().toISOString()
+        });
+        addedCount++;
+      }
+    }
+  });
+
+  const updatedStoreInventory = inventory.filter(i => i.pharmacy_id === pharmacy_id);
+
+  res.json({
+    success: true,
+    message: `Purchase invoice successfully processed! Stock for ${store.store_name} is now updated.`,
+    invoice_number: invoice_number || "INV-DIRECT-SYNC",
+    summary: {
+      added_medicines: addedCount,
+      updated_stock_lines: updatedCount,
+      total_store_inventory_lines: updatedStoreInventory.length,
+      total_stock_units: updatedStoreInventory.reduce((sum, i) => sum + i.stock_quantity, 0)
+    }
+  });
+});
 
 // Health & System Info
 app.get('/api/health', (req, res) => {

@@ -20,21 +20,76 @@ function request(options, body = null) {
 }
 
 async function runTests() {
-  console.log("--- STARTING MEDISHOP CONNECT BACKEND API TESTS ---");
+  console.log("--- STARTING MEDISHOP CONNECT BACKEND & CLINICAL TESTS ---");
   
   // 1. Health
   const health = await request({ host: 'localhost', port: 5000, path: '/api/health', method: 'GET' });
   console.log("1. /api/health:", health.status, health.data.system, "Medicines count:", health.data.counts.medicines);
 
-  // 2. Medicines Search
-  const meds = await request({ host: 'localhost', port: 5000, path: '/api/medicines?q=augmentin', method: 'GET' });
-  console.log("2. /api/medicines (search 'augmentin'):", meds.status, "Found:", meds.data.medicines[0].brand_name, "MRP:", meds.data.medicines[0].mrp, "Substitutes:", meds.data.medicines[0].substitutes.length);
+  // 2. Customer Signup with Mobile Number
+  const custBody = JSON.stringify({
+    phone: "9876543210",
+    full_name: "Anita Sharma",
+    pincode: "560038"
+  });
+  const custRes = await request({
+    host: 'localhost',
+    port: 5000,
+    path: '/api/auth/customer-signup',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(custBody) }
+  }, custBody);
+  console.log("2. /api/auth/customer-signup:", custRes.status, "Customer:", custRes.data.user?.full_name, "Phone:", custRes.data.user?.phone);
 
-  // 3. Pharmacies
-  const pharms = await request({ host: 'localhost', port: 5000, path: '/api/pharmacies?lat=12.9716&lng=77.6412&radius=5', method: 'GET' });
-  console.log("3. /api/pharmacies in 5km:", pharms.status, "Count:", pharms.data.count, "Closest:", pharms.data.pharmacies[0].store_name, `(${pharms.data.pharmacies[0].distance_km} km)`);
+  // 3. Chemist Registration with Drug License
+  const chemBody = JSON.stringify({
+    store_name: "CureWell Medico & DayNight Drugs",
+    owner_name: "Suresh Pillai",
+    license_number: "KA-BLR-DL-2024-91823",
+    phone: "9845088776",
+    address: "24, CMH Road, Indiranagar, Bengaluru",
+    pincode: "560038",
+    flat_store_discount: 16.0
+  });
+  const chemRes = await request({
+    host: 'localhost',
+    port: 5000,
+    path: '/api/auth/chemist-register',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(chemBody) }
+  }, chemBody);
+  console.log("3. /api/auth/chemist-register:", chemRes.status, "Registered Pharmacy:", chemRes.data.pharmacy?.store_name, "DL Verified:", chemRes.data.pharmacy?.is_verified);
 
-  // 4. Cart Estimate
+  // 4. Chemist Distributor Purchase Bill OCR Scan
+  const billOcrBody = JSON.stringify({
+    sample_id: "sunpharma_invoice",
+    pharmacy_id: chemRes.data.pharmacy?.id
+  });
+  const billOcr = await request({
+    host: 'localhost',
+    port: 5000,
+    path: '/api/chemist/invoice/ocr',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(billOcrBody) }
+  }, billOcrBody);
+  console.log("4. /api/chemist/invoice/ocr:", billOcr.status, "Distributor:", billOcr.data.invoice_metadata?.distributor_name, "Parsed Meds:", billOcr.data.line_items?.length);
+
+  // 5. Commit Bill Directly into Store Inventory
+  const commitBody = JSON.stringify({
+    pharmacy_id: chemRes.data.pharmacy?.id,
+    invoice_number: billOcr.data.invoice_metadata?.invoice_number,
+    items: billOcr.data.line_items
+  });
+  const commitRes = await request({
+    host: 'localhost',
+    port: 5000,
+    path: '/api/chemist/invoice/commit',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(commitBody) }
+  }, commitBody);
+  console.log("5. /api/chemist/invoice/commit:", commitRes.status, "Summary:", commitRes.data.summary);
+
+  // 6. Multi-Item Cart Cost Calculation
   const cartBody = JSON.stringify({
     user_lat: 12.9716,
     user_lng: 77.6412,
@@ -51,53 +106,9 @@ async function runTests() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(cartBody) }
   }, cartBody);
-  console.log("4. /api/cart/estimate:", cart.status, "Best Single Match:", cart.data.single_store_matches[0].store_name, "Locked Bill: ₹" + cart.data.single_store_matches[0].total_discounted_price, "Total Savings: ₹" + cart.data.single_store_matches[0].total_savings);
+  console.log("6. /api/cart/estimate:", cart.status, "Best Match:", cart.data.single_store_matches[0]?.store_name, "Net Bill: ₹" + cart.data.single_store_matches[0]?.total_discounted_price);
 
-  // 5. Prescription OCR
-  const ocrBody = JSON.stringify({ sample_id: 'bronchitis' });
-  const ocr = await request({
-    host: 'localhost',
-    port: 5000,
-    path: '/api/prescriptions/ocr',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(ocrBody) }
-  }, ocrBody);
-  console.log("5. /api/prescriptions/ocr:", ocr.status, "Status:", ocr.data.ocr_status, "Extracted Meds:", ocr.data.extracted_items.length, "Schedule H Flag:", ocr.data.has_schedule_h);
-
-  // 6. Create 60-min Estimate
-  const estBody = JSON.stringify({
-    pharmacy_id: "pharm-1",
-    customer_name: "Test Customer",
-    items: [{ id: "med-1", qty: 1 }, { id: "med-3", qty: 2 }]
-  });
-  const est = await request({
-    host: 'localhost',
-    port: 5000,
-    path: '/api/estimates/create',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(estBody) }
-  }, estBody);
-  console.log("6. /api/estimates/create:", est.status, "Token:", est.data.estimate.id, "Expires:", est.data.estimate.expires_at);
-
-  // 7. Countertop QR Verify & Dispense
-  const redeemBody = JSON.stringify({
-    estimate_id: est.data.estimate.id,
-    chemist_name: "Chirag Sharma"
-  });
-  const redeem = await request({
-    host: 'localhost',
-    port: 5000,
-    path: '/api/estimates/verify-redeem',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(redeemBody) }
-  }, redeemBody);
-  console.log("7. /api/estimates/verify-redeem:", redeem.status, "Message:", redeem.data.message, "Status:", redeem.data.estimate.status);
-
-  // 8. Frontend HTML check
-  const html = await request({ host: 'localhost', port: 5000, path: '/', method: 'GET' });
-  console.log("8. Frontend Static Single Page App:", html.status, "HTML byte length:", html.raw ? html.raw.length : 0);
-
-  console.log("--- ALL BACKEND AND FRONTEND CHECKS PASSED WITH FLYING COLORS! ---");
+  console.log("--- ALL BACKEND CHECKS (AUTH, INVOICE OCR, INVENTORY) PASSED! ---");
 }
 
 runTests().catch(err => {

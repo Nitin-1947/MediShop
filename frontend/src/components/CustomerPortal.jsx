@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  DrPillMascot, 
-  SpeedyAmbulance, 
-  CuteMedicineBottle, 
-  ChemistChiragMascot,
-  CartoonCityscape
-} from './CartoonMascots';
-import { 
   Search, 
   Plus, 
   Minus, 
@@ -23,12 +16,12 @@ import {
   ShoppingBag, 
   Star, 
   TrendingDown, 
-  HeartHandshake, 
   Phone,
   QrCode,
   ShieldCheck,
-  ChevronRight,
-  Filter
+  Building2,
+  Filter,
+  Check
 } from 'lucide-react';
 import { playPop, playSuccessChime, playCashDing } from '../utils/audio';
 
@@ -37,7 +30,8 @@ export default function CustomerPortal({
   onGenerateEstimate, 
   cartItems, 
   setCartItems,
-  onOpenReviews 
+  onOpenReviews,
+  currentUser 
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -52,11 +46,10 @@ export default function CustomerPortal({
   // Cart Estimation Results from backend
   const [estimationData, setEstimationData] = useState(null);
   const [isEstimating, setIsEstimating] = useState(false);
-  const [showCartDrawer, setShowCartDrawer] = useState(false);
 
   // User simulated location (Indiranagar 100ft road)
-  const userLat = 12.9716;
-  const userLng = 77.6412;
+  const userLat = currentUser?.user?.lat || 12.9716;
+  const userLng = currentUser?.user?.lng || 77.6412;
 
   // Fetch medicines catalog
   const fetchMedicines = async () => {
@@ -170,19 +163,6 @@ export default function CustomerPortal({
     setCartItems(prev => prev.filter(i => i.id !== medicineId));
   };
 
-  // Swap with lower cost generic substitute
-  const handleSwapGeneric = (originalId, substitute) => {
-    playCashDing();
-    confetti({ particleCount: 40, spread: 50 });
-    setCartItems(prev => {
-      const existing = prev.find(i => i.id === originalId);
-      const qty = existing ? existing.qty : 1;
-      return prev
-        .filter(i => i.id !== originalId)
-        .concat([{ ...substitute, qty }]);
-    });
-  };
-
   // Trigger locked estimate reservation
   const handleCreateReservation = async (pharmacyId) => {
     playPop();
@@ -192,15 +172,15 @@ export default function CustomerPortal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pharmacy_id: pharmacyId,
-          customer_name: "Rohan Verma",
-          customer_phone: "+91 98450 12345",
+          customer_name: currentUser?.user?.full_name || "Rahul Verma",
+          customer_phone: currentUser?.user?.phone || "+91 98450 12345",
           items: cartItems.map(i => ({ id: i.id, qty: i.qty }))
         })
       });
       const data = await res.json();
       if (data.success) {
         playSuccessChime();
-        confetti({ particleCount: 90, spread: 80 });
+        confetti({ particleCount: 85, spread: 75 });
         onGenerateEstimate(data.estimate);
       }
     } catch (err) {
@@ -210,76 +190,64 @@ export default function CustomerPortal({
 
   return (
     <div className="space-y-8">
-      {/* Cartoon Hero Banner */}
-      <div className="cartoon-card p-6 md:p-8 bg-gradient-to-r from-bubble-200 via-mint-100 to-sunny-200 relative overflow-hidden border-3">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center relative z-10">
-          <div className="md:col-span-8 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white border-2 border-slate-900 rounded-full text-xs font-black shadow-cartoon-sm">
-              <Sparkles className="w-4 h-4 text-sunny-500 fill-sunny-400" />
-              Hyperlocal Medicine Discovery & Price Transparency
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
-              Find Medicines in Nearby Pharmacies at Lowest Net Price! 💊
-            </h1>
-            <p className="text-slate-700 text-sm md:text-base font-semibold max-w-xl">
-              Check real-time stock across licensed chemists in your neighborhood, compare total basket costs with active discounts, and lock in your price with a 60-min QR slip before you step out!
-            </p>
-
-            {/* Quick Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={() => { playPop(); onOpenOcrModal(); }}
-                className="cartoon-btn cartoon-btn-pink py-2.5 px-5 text-sm"
-              >
-                <Camera className="w-4 h-4" />
-                <span>Upload Doctor's Prescription (OCR)</span>
-              </button>
-
-              <button
-                onClick={() => { playPop(); setShowCartDrawer(true); }}
-                className="cartoon-btn cartoon-btn-primary py-2.5 px-5 text-sm"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>View Pre-Visit Cart ({cartItems.reduce((sum, i) => sum + i.qty, 0)})</span>
-              </button>
-            </div>
+      {/* Clean Slate & Clinical Teal Hero Banner */}
+      <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white rounded-2xl p-6 sm:p-8 border border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="max-w-3xl space-y-4 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/10 border border-teal-500/30 rounded-full text-xs font-semibold text-teal-300">
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
+            Hyperlocal Medicine Availability & Counter Price Lock
           </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            Find Prescription & OTC Medicines in Local Pharmacies at Lowest Net Cost.
+          </h1>
+          <p className="text-sm text-slate-300 font-medium leading-relaxed max-w-2xl">
+            Check real-time stock across licensed retail pharmacies, compare multi-item basket rates with active discounts, and lock in your price with a 60-minute QR estimate slip before stepping out.
+          </p>
 
-          <div className="md:col-span-4 flex justify-center items-center gap-2">
-            <DrPillMascot size={130} className="animate-bounce-subtle" />
-            <SpeedyAmbulance size={130} />
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              onClick={() => { playPop(); onOpenOcrModal(); }}
+              className="px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs transition-all shadow-sm flex items-center gap-2"
+            >
+              <Camera className="w-4 h-4" />
+              <span>Scan Doctor's Prescription (OCR)</span>
+            </button>
+            <div className="text-xs text-slate-400 flex items-center gap-1.5 pl-1">
+              <Check className="w-3.5 h-3.5 text-teal-400" />
+              <span>Drugs & Cosmetics Act 1940 Compliant</span>
+            </div>
           </div>
         </div>
 
-        {/* Decorative Cityscape at bottom */}
-        <CartoonCityscape className="mt-4 opacity-75" />
+        {/* Ambient background glow */}
+        <div className="absolute right-0 top-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* SEARCH & FILTER CONTROLS BAR */}
-      <div className="cartoon-card p-5 bg-white space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+      {/* SEARCH & FILTERS BAR */}
+      <div className="clinical-card p-4 sm:p-5 bg-white space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search Input */}
           <div className="md:col-span-6 relative">
-            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by Brand Name (e.g., Augmentin, Dolo) or Generic Salt..."
-              className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-900 font-bold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-bubble-400 shadow-cartoon-sm"
+              className="clinical-input pl-10 text-xs sm:text-sm"
             />
           </div>
 
           {/* Radius Selector */}
-          <div className="md:col-span-3 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border-2 border-slate-900 shadow-cartoon-sm">
-            <MapPin className="w-4 h-4 text-bubble-600 shrink-0 ml-1.5" />
-            <span className="text-xs font-black text-slate-700">Radius:</span>
+          <div className="md:col-span-3 flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
+            <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0 ml-1.5" />
+            <span className="text-xs font-semibold text-slate-600">Radius:</span>
             {[1.0, 3.0, 5.0].map(r => (
               <button
                 key={r}
                 onClick={() => { playPop(); setRadiusKm(r); }}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
-                  radiusKm === r ? 'bg-bubble-400 text-slate-900 border border-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200'
+                className={`flex-1 py-1 rounded text-xs font-semibold transition-all ${
+                  radiusKm === r ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {r} km
@@ -287,34 +255,36 @@ export default function CustomerPortal({
             ))}
           </div>
 
-          {/* 24/7 Emergency Toggle */}
-          <div className="md:col-span-3 flex items-center justify-between p-2.5 rounded-xl border-2 border-slate-900 bg-slate-50 shadow-cartoon-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-medipink-500" />
-              <span className="text-xs font-black text-slate-900">24/7 Night Duty Only</span>
+          {/* 24/7 Filter */}
+          <div className="md:col-span-3 flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 text-slate-700">
+              <Clock className="w-3.5 h-3.5 text-teal-600" />
+              <span>24/7 Night Duty Only</span>
             </div>
             <button
               onClick={() => { playPop(); setIs24x7Only(!is24x7Only); }}
-              className={`w-12 h-6 rounded-full border-2 border-slate-900 transition-colors p-0.5 flex items-center ${
-                is24x7Only ? 'bg-mint-400 justify-end' : 'bg-slate-200 justify-start'
+              className={`w-9 h-5 rounded-full transition-colors p-0.5 flex items-center ${
+                is24x7Only ? 'bg-teal-600 justify-end' : 'bg-slate-300 justify-start'
               }`}
             >
-              <div className="w-4 h-4 rounded-full bg-white border border-slate-900 shadow-sm" />
+              <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
             </button>
           </div>
         </div>
 
-        {/* Category & Schedule Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t-2 border-slate-100">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-wider mr-1">
-            Category:
+        {/* Categories */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs">
+          <span className="font-bold text-slate-400 uppercase tracking-wider mr-1 text-[11px]">
+            Therapeutic Class:
           </span>
           {['ALL', 'Antibiotic', 'Analgesic', 'Gastrointestinal', 'Anti-Allergic', 'Cardiovascular', 'OTC'].map(cat => (
             <button
               key={cat}
               onClick={() => { playPop(); setSelectedCategory(cat); }}
-              className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-slate-900 transition-all ${
-                selectedCategory === cat ? 'bg-slate-900 text-white shadow-cartoon-sm' : 'bg-white text-slate-700 hover:bg-slate-100'
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                selectedCategory === cat 
+                  ? 'bg-slate-900 text-white' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {cat}
@@ -323,112 +293,110 @@ export default function CustomerPortal({
         </div>
       </div>
 
-      {/* MAIN TWO-COLUMN SECTION: MEDICINE CATALOG & NEARBY STORES / CART */}
+      {/* TWO COLUMN WORKSPACE: CATALOG & PRE-VISIT CART */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Medicines Catalog (8 cols) */}
+        {/* Left Column: Medicine Catalog (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-              <CuteMedicineBottle size={36} />
-              <span>Available Medicines in Your Zone ({medicines.length})</span>
+          <div className="flex items-center justify-between pb-1">
+            <h2 className="text-lg font-bold text-slate-900">
+              Verified Medicines in Your Radius ({medicines.length})
             </h2>
-            <span className="text-xs font-bold text-slate-500">
-              Indiranagar Hub (560038)
+            <span className="text-xs text-slate-500 font-medium">
+              Indiranagar Hub • Zone 560038
             </span>
           </div>
 
-          {/* Medicines Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {medicines.map(med => {
               const inCartItem = cartItems.find(i => i.id === med.id);
               const qty = inCartItem ? inCartItem.qty : 0;
 
               return (
-                <div key={med.id} className="cartoon-card p-5 bg-white space-y-3 flex flex-col justify-between cartoon-card-hover">
+                <div key={med.id} className="clinical-card p-4 bg-white flex flex-col justify-between clinical-card-hover space-y-3">
                   <div>
-                    {/* Header Row */}
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-black text-slate-900 text-base leading-tight">
+                        <h3 className="font-bold text-slate-900 text-sm leading-snug">
                           {med.brand_name}
                         </h3>
-                        <div className="text-xs text-slate-500 font-bold mt-0.5">
+                        <div className="text-[11px] text-slate-500 font-medium">
                           {med.manufacturer}
                         </div>
                       </div>
-                      <span className={`cartoon-badge ${
+
+                      <span className={`clinical-badge ${
                         med.schedule_category === 'Schedule H' 
-                          ? 'bg-sunny-200 text-sunny-800' 
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200' 
                           : med.schedule_category === 'Schedule H1'
-                            ? 'bg-medipink-200 text-medipink-800'
-                            : 'bg-mint-200 text-mint-800'
+                            ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                            : 'bg-teal-50 text-teal-800 border border-teal-200'
                       }`}>
                         {med.schedule_category}
                       </span>
                     </div>
 
-                    {/* Generic Salt Description */}
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 mt-2">
-                      <span className="text-[10px] font-black uppercase text-slate-400 block">Salt Formula:</span>
+                    <div className="p-2 bg-slate-50 rounded-lg text-xs font-medium text-slate-600 mt-2 border border-slate-100">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Salt Formula:</span>
                       {med.generic_salt}
                     </div>
 
-                    <div className="text-[11px] text-slate-500 font-bold mt-2">
+                    <div className="text-[11px] text-slate-400 mt-2 font-medium">
                       Pack: {med.pack_size}
                     </div>
                   </div>
 
-                  {/* Generic Substitute Recommendation Banner if available */}
+                  {/* Generic Substitute Banner */}
                   {med.substitutes && med.substitutes.length > 0 && (
-                    <div className="p-2.5 bg-mint-50 rounded-xl border border-mint-300 text-xs space-y-1">
-                      <div className="flex items-center justify-between text-mint-800 font-black">
+                    <div className="p-2 bg-emerald-50/70 rounded-lg border border-emerald-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-emerald-900 font-bold">
                         <span className="flex items-center gap-1">
-                          <TrendingDown className="w-3.5 h-3.5 text-mint-600" />
-                          Generic Alternative: {med.substitutes[0].brand_name}
+                          <TrendingDown className="w-3.5 h-3.5 text-emerald-600" />
+                          Generic: {med.substitutes[0].brand_name}
                         </span>
                         <span className="text-emerald-700 font-mono">
-                          Save ₹{med.substitutes[0].savings_vs_brand} ({med.substitutes[0].savings_pct}%)
+                          Save {med.substitutes[0].savings_pct}% (₹{med.substitutes[0].savings_vs_brand})
                         </span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => {
                           const fullSub = medicines.find(m => m.id === med.substitutes[0].id);
                           if (fullSub) handleAddToCart(fullSub);
                         }}
-                        className="text-[11px] font-bold text-mint-700 hover:underline flex items-center gap-1"
+                        className="text-[11px] font-semibold text-emerald-700 hover:underline"
                       >
                         Add {med.substitutes[0].brand_name} (₹{med.substitutes[0].mrp}) instead →
                       </button>
                     </div>
                   )}
 
-                  {/* Price & Cart Buttons */}
+                  {/* Price & Add to Cart */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <div>
-                      <span className="text-xs text-slate-400 font-bold">MRP:</span>
-                      <div className="text-xl font-black text-slate-900">₹{med.mrp}</div>
+                      <span className="text-[11px] text-slate-400 font-semibold block">Retail MRP</span>
+                      <span className="text-lg font-bold font-mono text-slate-900">₹{med.mrp}</span>
                     </div>
 
                     {qty > 0 ? (
-                      <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border-2 border-slate-900">
+                      <div className="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
                         <button
                           onClick={() => handleUpdateQty(med.id, -1)}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-900 flex items-center justify-center font-black active:scale-90"
+                          className="w-6 h-6 rounded bg-white text-slate-700 flex items-center justify-center font-bold text-xs hover:bg-slate-200"
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          <Minus className="w-3 h-3" />
                         </button>
-                        <span className="w-6 text-center font-black text-sm">{qty}</span>
+                        <span className="w-5 text-center font-bold text-xs text-slate-800">{qty}</span>
                         <button
                           onClick={() => handleUpdateQty(med.id, 1)}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-900 flex items-center justify-center font-black active:scale-90"
+                          className="w-6 h-6 rounded bg-white text-slate-700 flex items-center justify-center font-bold text-xs hover:bg-slate-200"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3" />
                         </button>
                       </div>
                     ) : (
                       <button
                         onClick={() => handleAddToCart(med)}
-                        className="cartoon-btn cartoon-btn-primary py-2 px-3.5 text-xs"
+                        className="clinical-btn-primary text-xs py-1.5 px-3"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add to Basket</span>
@@ -441,21 +409,20 @@ export default function CustomerPortal({
           </div>
         </div>
 
-        {/* Right Column: Pre-Visit Cart & Smart Estimate Matcher (4 cols) */}
+        {/* Right Column: Pre-Visit Cart & Smart Estimate (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Cart Header Card */}
-          <div className="cartoon-card p-5 bg-white space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b-2 border-slate-100">
+          <div className="clinical-card p-5 bg-white space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-bubble-500" />
-                <h3 className="text-xl font-black text-slate-900">
+                <ShoppingBag className="w-4 h-4 text-teal-600" />
+                <h3 className="text-base font-bold text-slate-900">
                   Pre-Visit Basket ({cartItems.length})
                 </h3>
               </div>
               {cartItems.length > 0 && (
                 <button
                   onClick={() => { playPop(); setCartItems([]); }}
-                  className="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1"
+                  className="text-xs text-slate-400 hover:text-rose-600 font-semibold flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Clear
                 </button>
@@ -464,27 +431,27 @@ export default function CustomerPortal({
 
             {cartItems.length === 0 ? (
               <div className="p-8 text-center text-slate-400 space-y-2">
-                <DrPillMascot size={65} className="mx-auto opacity-50" />
-                <div className="font-bold text-sm">Your basket is empty!</div>
-                <p className="text-xs">
+                <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
+                <div className="font-semibold text-xs text-slate-600">Your basket is empty</div>
+                <p className="text-[11px] text-slate-400">
                   Add medicines or scan your prescription to compare nearby store prices in real-time.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {/* Cart items list */}
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                   {cartItems.map(item => (
-                    <div key={item.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs">
+                    <div key={item.id} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-black text-slate-900">{item.brand_name}</div>
-                        <div className="text-[11px] text-slate-500 font-bold">₹{item.mrp} × {item.qty}</div>
+                        <div className="font-bold text-slate-900">{item.brand_name}</div>
+                        <div className="text-[11px] text-slate-400 font-mono">₹{item.mrp} × {item.qty}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900">₹{(item.mrp * item.qty).toFixed(2)}</span>
+                        <span className="font-mono font-bold text-slate-900">₹{(item.mrp * item.qty).toFixed(2)}</span>
                         <button
                           onClick={() => handleRemoveFromCart(item.id)}
-                          className="text-slate-400 hover:text-red-500"
+                          className="text-slate-400 hover:text-rose-500"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -495,53 +462,54 @@ export default function CustomerPortal({
 
                 {/* BEST SINGLE-SHOP COMPLETE MATCH CARD */}
                 {estimationData && estimationData.single_store_matches && estimationData.single_store_matches.length > 0 && (
-                  <div className="cartoon-card p-4 bg-bubble-50 border-2 border-bubble-500 space-y-3">
+                  <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/40 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="cartoon-badge bg-bubble-200 text-bubble-800 text-[10px]">
+                      <span className="clinical-badge bg-teal-100 text-teal-800 text-[10px]">
                         Single-Shop 100% Match
                       </span>
-                      <span className="text-xs font-black text-emerald-700">
+                      <span className="text-xs font-bold text-emerald-700">
                         Save {estimationData.single_store_matches[0].savings_percentage}%
                       </span>
                     </div>
 
                     <div>
-                      <div className="font-black text-slate-900 text-base">
+                      <div className="font-bold text-slate-900 text-sm">
                         {estimationData.single_store_matches[0].store_name}
                       </div>
-                      <div className="text-xs text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                      <div className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3 text-slate-400" />
-                        {estimationData.single_store_matches[0].distance_km} km away • {estimationData.single_store_matches[0].is_24_7 ? "24/7 Open" : "Open now"}
+                        {estimationData.single_store_matches[0].distance_km} km away • {estimationData.single_store_matches[0].is_24_7 ? "24/7 Duty" : "Open now"}
                       </div>
                     </div>
 
-                    {/* Stock Status Indicator */}
-                    <div className="p-2 bg-white rounded-xl border border-bubble-200 text-xs flex justify-between items-center font-bold">
-                      <span className="flex items-center gap-1.5 text-mint-700">
-                        <CheckCircle2 className="w-4 h-4 text-mint-500" />
+                    {/* Stock status */}
+                    <div className="p-2 bg-white rounded-lg border border-slate-200 text-xs flex justify-between items-center font-semibold text-teal-900">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600" />
                         All {estimationData.single_store_matches[0].items_available_count} of {cartItems.length} Items In Stock
                       </span>
                     </div>
 
-                    {/* Price Breakdown */}
-                    <div className="p-3 bg-white rounded-xl border-2 border-slate-900 space-y-1 text-xs">
-                      <div className="flex justify-between text-slate-500 font-bold">
-                        <span>Total Retail MRP:</span>
+                    {/* Price breakdown */}
+                    <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1 text-xs">
+                      <div className="flex justify-between text-slate-500 font-medium">
+                        <span>Retail MRP Total:</span>
                         <span>₹{estimationData.single_store_matches[0].total_mrp}</span>
                       </div>
-                      <div className="flex justify-between text-emerald-600 font-bold">
-                        <span>Discounted Total:</span>
+                      <div className="flex justify-between text-emerald-700 font-semibold">
+                        <span>Total Quoted Savings:</span>
                         <span>- ₹{estimationData.single_store_matches[0].total_savings}</span>
                       </div>
-                      <div className="flex justify-between font-black text-sm text-slate-900 pt-1 border-t border-slate-200">
+                      <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-100 text-sm">
                         <span>Locked Estimated Bill:</span>
-                        <span className="text-bubble-600 text-base">₹{estimationData.single_store_matches[0].total_discounted_price}</span>
+                        <span className="text-teal-700 font-mono">₹{estimationData.single_store_matches[0].total_discounted_price}</span>
                       </div>
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => handleCreateReservation(estimationData.single_store_matches[0].pharmacy_id)}
-                      className="w-full cartoon-btn cartoon-btn-primary py-2.5 text-xs shadow-cartoon-hover"
+                      className="w-full clinical-btn-primary py-2.5 text-xs"
                     >
                       <QrCode className="w-4 h-4" />
                       <span>Lock In Price & Generate 60-Min QR Slip</span>
@@ -549,45 +517,45 @@ export default function CustomerPortal({
                   </div>
                 )}
 
-                {/* SPLIT-CART SAVINGS MATCH (IF HIGHER SAVINGS FOUND!) */}
+                {/* SPLIT-CART MATCH */}
                 {estimationData && estimationData.split_cart_match && (
-                  <div className="cartoon-card p-4 bg-sunny-50 border-2 border-sunny-500 space-y-3">
+                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="cartoon-badge bg-sunny-200 text-sunny-800 text-[10px]">
+                      <span className="clinical-badge bg-amber-100 text-amber-800 text-[10px]">
                         Split-Cart Match Recommendation
                       </span>
-                      <span className="text-xs font-black text-sunny-700 animate-wiggle">
+                      <span className="text-xs font-bold text-amber-800">
                         Save +₹{estimationData.split_cart_match.extra_savings_vs_single} Extra!
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-700 font-semibold">
-                      Split your basket across 2 neighboring shops to get highest clearance discounts:
+                    <p className="text-xs text-slate-600 font-medium">
+                      Splitting basket between 2 neighboring stores provides higher discount rates:
                     </p>
 
                     <div className="space-y-1.5 text-xs">
-                      <div className="p-2 bg-white rounded-lg border border-sunny-300">
-                        <div className="font-black text-slate-900">
+                      <div className="p-2 bg-white rounded border border-amber-200">
+                        <div className="font-bold text-slate-900">
                           1. {estimationData.split_cart_match.store_a.store_name} ({estimationData.split_cart_match.store_a.distance_km} km)
                         </div>
-                        <div className="text-[11px] text-slate-600 font-bold">
+                        <div className="text-[11px] text-slate-500">
                           Items: {estimationData.split_cart_match.store_a.items.map(i => i.brand_name).join(', ')}
                         </div>
                       </div>
 
-                      <div className="p-2 bg-white rounded-lg border border-sunny-300">
-                        <div className="font-black text-slate-900">
+                      <div className="p-2 bg-white rounded border border-amber-200">
+                        <div className="font-bold text-slate-900">
                           2. {estimationData.split_cart_match.store_b.store_name} ({estimationData.split_cart_match.store_b.distance_km} km)
                         </div>
-                        <div className="text-[11px] text-slate-600 font-bold">
+                        <div className="text-[11px] text-slate-500">
                           Items: {estimationData.split_cart_match.store_b.items.map(i => i.brand_name).join(', ')}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs font-black pt-1">
+                    <div className="flex justify-between items-center text-xs font-bold pt-1">
                       <span>Combined Net Bill:</span>
-                      <span className="text-emerald-700 text-sm font-mono">
+                      <span className="text-emerald-700 font-mono">
                         ₹{estimationData.split_cart_match.combined_net_bill}
                       </span>
                     </div>
@@ -597,28 +565,26 @@ export default function CustomerPortal({
             )}
           </div>
 
-          {/* Nearby Verified Pharmacies Directory */}
-          <div className="cartoon-card p-5 bg-white space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-100">
-              <h4 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-emerald-500" />
-                Verified Pharmacies in {radiusKm} km Zone ({pharmacies.length})
-              </h4>
-            </div>
+          {/* Verified Nearby Pharmacies Directory */}
+          <div className="clinical-card p-5 bg-white space-y-3">
+            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <Building2 className="w-4 h-4 text-teal-600" />
+              Verified Pharmacies ({pharmacies.length})
+            </h4>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {pharmacies.map(pharm => (
-                <div key={pharm.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors space-y-1 text-xs">
+                <div key={pharm.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-teal-300 transition-colors space-y-1 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-black text-slate-900">{pharm.store_name}</span>
-                    <span className="text-bubble-600 font-black">{pharm.distance_km} km</span>
+                    <span className="font-bold text-slate-900">{pharm.store_name}</span>
+                    <span className="text-teal-700 font-mono font-semibold">{pharm.distance_km} km</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 font-semibold">{pharm.address}</div>
+                  <div className="text-[11px] text-slate-500">{pharm.address}</div>
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-emerald-700 font-bold">Flat {pharm.flat_store_discount}% OFF</span>
+                    <span className="text-emerald-700 font-bold">{pharm.flat_store_discount}% Store Discount</span>
                     <button
                       onClick={() => onOpenReviews(pharm)}
-                      className="text-slate-700 hover:text-bubble-600 font-black flex items-center gap-1"
+                      className="text-slate-600 hover:text-teal-700 font-semibold flex items-center gap-1"
                     >
                       <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
                       {pharm.rating} ({pharm.reviews_count})

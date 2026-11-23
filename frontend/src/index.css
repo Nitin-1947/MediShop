@@ -6,61 +6,96 @@
   body {
     background-color: #F8FAFC;
     color: #0F172A;
-    font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   }
 }
 
-/* Custom Cartoon UI styles */
+/* Clinical Teal & Clean Slate Design System */
+.clinical-card {
+  @apply bg-white border border-slate-200 rounded-xl shadow-card transition-all duration-200;
+}
+
+.clinical-card-hover {
+  @apply hover:border-teal-300 hover:shadow-card-hover;
+}
+
+.clinical-btn {
+  @apply font-semibold px-4 py-2 rounded-lg transition-all duration-150 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.clinical-btn-primary {
+  @apply clinical-btn bg-teal-600 text-white hover:bg-teal-700 shadow-sm active:translate-y-0.5;
+}
+
+.clinical-btn-secondary {
+  @apply clinical-btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400;
+}
+
+.clinical-btn-slate {
+  @apply clinical-btn bg-slate-900 text-white hover:bg-slate-800;
+}
+
+.clinical-btn-danger {
+  @apply clinical-btn bg-rose-600 text-white hover:bg-rose-700;
+}
+
+.clinical-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+}
+
+.clinical-input {
+  @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all placeholder:text-slate-400;
+}
+
+/* Backward-compatible aliases for existing component tags */
 .cartoon-card {
-  @apply bg-white border-2 border-slate-900 rounded-2xl shadow-cartoon transition-all duration-200;
+  @apply clinical-card;
 }
 
 .cartoon-card-hover {
-  @apply hover:-translate-y-1 hover:shadow-cartoon-lg active:translate-y-0 active:shadow-cartoon-sm;
+  @apply clinical-card-hover;
 }
 
 .cartoon-btn {
-  @apply font-bold px-4 py-2 rounded-xl border-2 border-slate-900 shadow-cartoon transition-all duration-150 active:translate-y-1 active:shadow-none flex items-center justify-center gap-2;
+  @apply clinical-btn;
 }
 
 .cartoon-btn-primary {
-  @apply cartoon-btn bg-bubble-400 text-slate-900 hover:bg-bubble-300;
+  @apply clinical-btn-primary;
 }
 
 .cartoon-btn-mint {
-  @apply cartoon-btn bg-mint-400 text-slate-900 hover:bg-mint-300;
+  @apply clinical-btn bg-emerald-600 text-white hover:bg-emerald-700;
 }
 
 .cartoon-btn-pink {
-  @apply cartoon-btn bg-medipink-400 text-white hover:bg-medipink-500;
+  @apply clinical-btn bg-teal-700 text-white hover:bg-teal-800;
 }
 
 .cartoon-btn-sunny {
-  @apply cartoon-btn bg-sunny-400 text-slate-900 hover:bg-sunny-300;
+  @apply clinical-btn bg-amber-500 text-slate-900 hover:bg-amber-600;
 }
 
 .cartoon-btn-secondary {
-  @apply cartoon-btn bg-white text-slate-800 hover:bg-slate-100;
+  @apply clinical-btn-secondary;
 }
 
 .cartoon-badge {
-  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border-2 border-slate-900 shadow-cartoon-sm;
+  @apply clinical-badge;
 }
 
-/* Custom playful scrollbar */
+/* Refined custom scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #F1F5F9;
-  border-left: 2px solid #0F172A;
 }
 ::-webkit-scrollbar-thumb {
-  background: #7DD3FC;
-  border: 2px solid #0F172A;
+  background: #94A3B8;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #38BDF8;
+  background: #0D9488;
 }

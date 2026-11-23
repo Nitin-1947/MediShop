@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { 
-  ChemistChiragMascot, 
-  CuteScannerMascot, 
-  DrPillMascot, 
-  CuteMedicineBottle 
-} from './CartoonMascots';
+import ChemistBillOCRScanner from './ChemistBillOCRScanner';
 import { 
   QrCode, 
   Upload, 
@@ -15,20 +10,28 @@ import {
   FileText, 
   Search, 
   RefreshCw, 
-  Percent, 
+  Sliders, 
   Package, 
   ShieldCheck, 
   Sparkles, 
-  Layers, 
+  Building2, 
   ArrowRight,
   TrendingDown,
-  Sliders
+  Scan,
+  BadgeCheck,
+  Check
 } from 'lucide-react';
 import { playPop, playSuccessChime, playCashDing } from '../utils/audio';
 
-export default function ChemistDashboard({ initialEstimateToken = null, onClearToken }) {
-  const [activeTab, setActiveTab] = useState('qr_scanner');
-  const [pharmacyId, setPharmacyId] = useState('pharm-1'); // Default to Sanjivani 24/7 Medico
+export default function ChemistDashboard({ 
+  initialEstimateToken = null, 
+  onClearToken, 
+  activePharmacy = null,
+  onSwitchToCustomer 
+}) {
+  const [activeTab, setActiveTab] = useState('bill_ocr'); // default to the new requested feature: bill_ocr!
+  const [pharmacyId, setPharmacyId] = useState(activePharmacy?.id || 'pharm-1');
+  const [pharmacyProfile, setPharmacyProfile] = useState(activePharmacy || null);
   const [inventoryList, setInventoryList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [nearExpiryCount, setNearExpiryCount] = useState(0);
@@ -39,9 +42,6 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
   const [scannedEstimate, setScannedEstimate] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [dispenseSuccess, setDispenseSuccess] = useState(null);
-
-  // Dynamic Discounting State
-  const [updatingInvId, setUpdatingInvId] = useState(null);
 
   // Regulatory Compliance logs
   const [complianceLogs, setComplianceLogs] = useState([]);
@@ -55,6 +55,9 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
       if (data.success) {
         setInventoryList(data.inventory);
         setNearExpiryCount(data.near_expiry_count);
+        if (!pharmacyProfile) {
+          setPharmacyProfile(data.pharmacy);
+        }
       }
     } catch (err) {
       console.error("Error fetching inventory:", err);
@@ -76,12 +79,20 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
   };
 
   useEffect(() => {
+    if (activePharmacy) {
+      setPharmacyId(activePharmacy.id);
+      setPharmacyProfile(activePharmacy);
+    }
+  }, [activePharmacy]);
+
+  useEffect(() => {
     fetchInventory();
     fetchComplianceLogs();
   }, [pharmacyId]);
 
   useEffect(() => {
     if (initialEstimateToken) {
+      setActiveTab('qr_scanner');
       setScanInput(initialEstimateToken);
       handleLookupEstimate(initialEstimateToken);
     }
@@ -108,7 +119,7 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
           setScanError(data.error || "Estimate token not recognized.");
           setScannedEstimate(null);
         }
-      }, 700);
+      }, 600);
     } catch (err) {
       setIsScanning(false);
       setScanError("Failed to connect to estimation service.");
@@ -126,7 +137,7 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           estimate_id: scannedEstimate.id,
-          chemist_name: "Chirag Sharma (Pharmacist Reg: KA-8890)",
+          chemist_name: pharmacyProfile?.owner_name || "Licensed Chemist",
           verified_doctor_reg_no: "KA-MED-49110"
         })
       });
@@ -135,8 +146,8 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
       if (data.success) {
         playCashDing();
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 70,
+          spread: 60,
           origin: { y: 0.6 }
         });
         setDispenseSuccess(data.message);
@@ -153,7 +164,6 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
 
   // Dynamic Discount Update (<60 Days Liquidation)
   const handleUpdateDiscount = async (invItem, newDiscount) => {
-    setUpdatingInvId(invItem.id);
     playPop();
 
     try {
@@ -168,135 +178,153 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
       const data = await res.json();
       if (data.success) {
         playSuccessChime();
-        // Update local state
         setInventoryList(prev => prev.map(item => 
           item.id === invItem.id ? { ...item, current_effective_discount: newDiscount } : item
         ));
       }
     } catch (err) {
       console.error("Discount update error:", err);
-    } finally {
-      setUpdatingInvId(null);
-    }
-  };
-
-  // Simulate POS CSV Bulk Upload
-  const handleUploadPosCsv = async (format) => {
-    playPop();
-    try {
-      const res = await fetch('/api/chemist/inventory/upload-csv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pharmacy_id: pharmacyId, sample_format: format })
-      });
-      const data = await res.json();
-      if (data.success) {
-        playCashDing();
-        confetti({ particleCount: 50, spread: 60 });
-        alert(`Success! Synced with ${data.software_detected}. Processed ${data.rows_processed} medicine rows.`);
-        fetchInventory();
-      }
-    } catch (err) {
-      alert("Error syncing POS CSV.");
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Chemist Header Profile Banner */}
-      <div className="cartoon-card p-6 bg-gradient-to-r from-emerald-100 via-mint-100 to-sunny-100 flex flex-col md:flex-row items-center justify-between gap-6 border-3">
-        <div className="flex items-center gap-4">
-          <ChemistChiragMascot size={90} className="shrink-0" />
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border-2 border-slate-900 rounded-full text-xs font-black shadow-cartoon-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              Chemist Countertop Station Online
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Sanjivani 24/7 Medico & Chemist 🏪
-            </h2>
-            <div className="text-xs text-slate-700 font-bold flex flex-wrap items-center gap-3">
-              <span>Licensed Chemist: Chirag Sharma</span>
-              <span>•</span>
-              <span>Drug License: KA-BLR-DL-2023-88219</span>
-              <span>•</span>
-              <span className="text-emerald-700">Flat Store Discount: 14%</span>
-            </div>
+      <div className="clinical-card p-6 bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs font-semibold border border-teal-500/30">
+              <BadgeCheck className="w-4 h-4 text-teal-400" />
+              Verified Licensed Retail Pharmacy
+            </span>
+            <span className="text-xs font-mono text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded border border-slate-700">
+              DL No: {pharmacyProfile?.license_number || "KA-BLR-DL-2023-88219"}
+            </span>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span>{pharmacyProfile?.store_name || "Sanjivani 24/7 Medico & Chemist"}</span>
+          </h2>
+
+          <div className="text-xs text-slate-300 flex flex-wrap items-center gap-3 font-medium">
+            <span>Owner: <strong className="text-white">{pharmacyProfile?.owner_name || "Chirag Sharma"}</strong></span>
+            <span>•</span>
+            <span>{pharmacyProfile?.address || "Indiranagar 100ft Road, Bengaluru"}</span>
+            <span>•</span>
+            <span className="text-teal-300">Flat Store Discount: {pharmacyProfile?.flat_store_discount || 14}%</span>
           </div>
         </div>
 
         {/* Quick Expiry Warning Badge */}
         {nearExpiryCount > 0 && (
-          <div className="p-4 bg-sunny-200 border-2 border-slate-900 rounded-2xl shadow-cartoon text-center space-y-1 shrink-0">
-            <div className="flex items-center justify-center gap-1.5 text-xs font-black text-slate-900">
-              <AlertTriangle className="w-4 h-4 text-sunny-700" />
-              Dynamic Expiry Alert
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center space-y-1 shrink-0">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              Expiry Alert
             </div>
-            <div className="text-xl font-black text-slate-900">
-              {nearExpiryCount} Items &lt;60 Days
+            <div className="text-lg font-bold text-white">
+              {nearExpiryCount} Items &lt; 60 Days
             </div>
             <button
               onClick={() => { playPop(); setActiveTab('dynamic_discounts'); }}
-              className="text-xs font-black text-slate-900 underline hover:text-emerald-800"
+              className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline block"
             >
-              Apply Liquidation Discounts →
+              Set Liquidation Discount →
             </button>
           </div>
         )}
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => { playPop(); setActiveTab('bill_ocr'); }}
+          className={`clinical-btn ${
+            activeTab === 'bill_ocr' 
+              ? 'bg-teal-600 text-white shadow-sm' 
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Scan className="w-4 h-4" />
+          <span>1. Wholesaler Bill OCR Scanner</span>
+          <span className="px-1.5 py-0.2 bg-teal-500 text-[10px] rounded text-white font-bold">New</span>
+        </button>
+
         <button
           onClick={() => { playPop(); setActiveTab('qr_scanner'); }}
-          className={`cartoon-btn ${activeTab === 'qr_scanner' ? 'bg-bubble-400 text-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+          className={`clinical-btn ${
+            activeTab === 'qr_scanner' 
+              ? 'bg-teal-600 text-white shadow-sm' 
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+          }`}
         >
           <QrCode className="w-4 h-4" />
-          1. Countertop QR Scanner Mode
+          <span>2. Countertop QR Pickup Verification</span>
         </button>
+
         <button
           onClick={() => { playPop(); setActiveTab('dynamic_discounts'); }}
-          className={`cartoon-btn ${activeTab === 'dynamic_discounts' ? 'bg-sunny-400 text-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+          className={`clinical-btn ${
+            activeTab === 'dynamic_discounts' 
+              ? 'bg-teal-600 text-white shadow-sm' 
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+          }`}
         >
           <Sliders className="w-4 h-4" />
-          2. Dynamic Expiry Discounting ({nearExpiryCount})
+          <span>3. Dynamic Expiry Discounting ({nearExpiryCount})</span>
         </button>
+
         <button
           onClick={() => { playPop(); setActiveTab('pos_inventory'); }}
-          className={`cartoon-btn ${activeTab === 'pos_inventory' ? 'bg-mint-400 text-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+          className={`clinical-btn ${
+            activeTab === 'pos_inventory' 
+              ? 'bg-teal-600 text-white shadow-sm' 
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+          }`}
         >
           <Package className="w-4 h-4" />
-          3. POS Inventory & CSV Sync
+          <span>4. Live Store Inventory ({inventoryList.length})</span>
         </button>
+
         <button
           onClick={() => { playPop(); setActiveTab('compliance_register'); }}
-          className={`cartoon-btn ${activeTab === 'compliance_register' ? 'bg-lavender-300 text-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+          className={`clinical-btn ${
+            activeTab === 'compliance_register' 
+              ? 'bg-teal-600 text-white shadow-sm' 
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+          }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          4. Schedule H/H1 Compliance Logger
+          <span>5. Schedule H/H1 Compliance Register</span>
         </button>
       </div>
 
-      {/* TAB 1: COUNTERTOP QR SCANNER MODE */}
+      {/* TAB 1: WHOLESALER BILL OCR SCANNER */}
+      {activeTab === 'bill_ocr' && (
+        <ChemistBillOCRScanner
+          pharmacyId={pharmacyId}
+          onInventoryUpdated={() => fetchInventory()}
+        />
+      )}
+
+      {/* TAB 2: COUNTERTOP QR SCANNER MODE */}
       {activeTab === 'qr_scanner' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Scanner Input & Camera Simulator */}
-          <div className="lg:col-span-5 cartoon-card p-6 bg-white space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-bubble-500" />
-                Scan Customer Estimate Slip
+          {/* Scanner Input */}
+          <div className="lg:col-span-5 clinical-card p-6 bg-white space-y-5">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-teal-600" />
+                <span>Verify Customer Estimate Slip</span>
               </h3>
-              <CuteScannerMascot size={55} />
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Scan customer QR code or enter token to view locked-in quoted rates and verify Doctor prescription.
+              </p>
             </div>
 
-            <p className="text-xs text-slate-600 font-semibold">
-              When a customer walks in with a Medishop Estimate QR Code on their phone, scan or enter the 6-digit token to instantly unlock and verify the locked-in bill.
-            </p>
-
             <div className="space-y-3">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                Customer Token ID / QR Data:
+              <label className="text-xs font-semibold text-slate-700 block">
+                Token ID / Scanned Data:
               </label>
               <div className="flex gap-2">
                 <input
@@ -304,122 +332,102 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
                   value={scanInput}
                   onChange={(e) => setScanInput(e.target.value)}
                   placeholder="e.g. EST-894102"
-                  className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-900 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-bubble-400"
+                  className="clinical-input font-mono font-bold"
                 />
                 <button
+                  type="button"
                   onClick={() => handleLookupEstimate(scanInput)}
                   disabled={isScanning}
-                  className="cartoon-btn cartoon-btn-primary"
+                  className="clinical-btn-primary shrink-0"
                 >
                   <Search className="w-4 h-4" />
                   <span>Lookup</span>
                 </button>
               </div>
 
-              {/* Sample QR token buttons */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-400 font-bold">Quick Demo:</span>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Sample Token:</span>
                 <button
+                  type="button"
                   onClick={() => {
                     setScanInput('EST-894102');
                     handleLookupEstimate('EST-894102');
                   }}
-                  className="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-300 font-mono text-[11px] font-bold"
+                  className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded font-mono text-[11px] font-semibold text-slate-700"
                 >
-                  EST-894102 (Sample)
+                  EST-894102
                 </button>
               </div>
             </div>
 
-            {/* Simulated Laser Scanner Box */}
-            <div className="p-6 bg-slate-900 rounded-2xl border-2 border-slate-900 text-center relative overflow-hidden space-y-2">
-              <div className="w-28 h-28 mx-auto border-2 border-dashed border-red-400 rounded-xl flex items-center justify-center relative">
-                <QrCode className="w-16 h-16 text-slate-600" />
-                {isScanning && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-red-500 shadow-md shadow-red-500 animate-bounce" />
-                )}
-              </div>
-              <div className="text-xs text-slate-300 font-bold">
-                {isScanning ? "Scanning QR Code beam..." : "Point physical 2D barcode scanner or type token"}
-              </div>
-            </div>
-
             {scanError && (
-              <div className="p-3 bg-red-50 border-2 border-red-500 rounded-xl text-xs font-bold text-red-700 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                {scanError}
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{scanError}</span>
               </div>
             )}
           </div>
 
-          {/* Scanned Slip Details & Dispense Action */}
-          <div className="lg:col-span-7 cartoon-card p-6 bg-white space-y-5">
-            <h3 className="text-xl font-black text-slate-900 pb-3 border-b-2 border-slate-100 flex items-center justify-between">
-              <span>Estimate Verification Details</span>
+          {/* Scanned Slip Details */}
+          <div className="lg:col-span-7 clinical-card p-6 bg-white space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900">
+                Estimate Verification Details
+              </h3>
               {scannedEstimate && (
-                <span className={`cartoon-badge ${
-                  scannedEstimate.status === 'VERIFIED_DISPENSED' 
-                    ? 'bg-emerald-200 text-emerald-800' 
-                    : 'bg-bubble-200 text-bubble-800'
+                <span className={`clinical-badge ${
+                  scannedEstimate.status === 'VERIFIED_DISPENSED'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-teal-100 text-teal-800'
                 }`}>
                   Status: {scannedEstimate.status}
                 </span>
               )}
-            </h3>
+            </div>
 
             {scannedEstimate ? (
               <div className="space-y-4">
-                {/* Customer & Timestamp info */}
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-400 font-bold">Customer:</span>
-                    <div className="font-black text-slate-900 text-sm mt-0.5">{scannedEstimate.customer_name}</div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 font-semibold">Customer:</span>
+                    <div className="font-bold text-slate-900 text-sm mt-0.5">{scannedEstimate.customer_name}</div>
                     <div className="text-slate-500">{scannedEstimate.customer_phone}</div>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-400 font-bold">Token ID:</span>
-                    <div className="font-mono font-black text-bubble-600 text-sm mt-0.5">{scannedEstimate.id}</div>
-                    <div className="text-slate-500">Expires 60m from issue</div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 font-semibold">Token ID:</span>
+                    <div className="font-mono font-bold text-teal-700 text-sm mt-0.5">{scannedEstimate.id}</div>
+                    <div className="text-slate-500">60-Min Price Lock</div>
                   </div>
                 </div>
 
-                {/* Schedule H / H1 Regulatory Compliance Check */}
-                {scannedEstimate.schedule_compliance?.has_schedule_h ? (
-                  <div className="p-3 bg-sunny-50 rounded-xl border-2 border-slate-900 flex items-start gap-2.5 text-xs text-sunny-900">
-                    <ShieldCheck className="w-5 h-5 text-sunny-600 shrink-0 mt-0.5" />
+                {/* Schedule H / Prescription check */}
+                {scannedEstimate.schedule_compliance?.has_schedule_h && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 text-xs text-amber-900">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-black">Schedule H Drug Present — Prescription Verified!</div>
-                      <div className="text-slate-600 mt-0.5">
-                        Attaching Dr. Reg: <strong>{scannedEstimate.schedule_compliance.doctor_name}</strong> • Rx ID: <strong>{scannedEstimate.schedule_compliance.rx_id}</strong> to digital compliance register.
-                      </div>
+                      <span className="font-bold">Schedule H Drug Attached: </span>
+                      {scannedEstimate.schedule_compliance.doctor_name} ({scannedEstimate.schedule_compliance.rx_id})
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-mint-50 rounded-xl border-2 border-mint-400 flex items-center gap-2 text-xs font-bold text-mint-800">
-                    <CheckCircle2 className="w-4 h-4 text-mint-600" />
-                    All OTC items. No prescription attachment required.
                   </div>
                 )}
 
-                {/* Items to Dispense */}
+                {/* Items */}
                 <div className="space-y-2">
-                  <div className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                    Reserved Bill Items ({scannedEstimate.items.length}):
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Reserved Items ({scannedEstimate.items.length}):
                   </div>
-                  <div className="divide-y divide-slate-200 border-2 border-slate-900 rounded-xl overflow-hidden bg-white text-xs">
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden bg-white text-xs">
                     {scannedEstimate.items.map((item, i) => (
                       <div key={i} className="p-3 flex items-center justify-between">
                         <div>
-                          <div className="font-black text-slate-900">{item.brand_name}</div>
-                          <div className="text-[11px] text-slate-500 font-bold">
+                          <div className="font-bold text-slate-900">{item.brand_name}</div>
+                          <div className="text-[11px] text-slate-500">
                             Qty: {item.qty} strip • MRP ₹{item.mrp} (-{item.discount_pct}% OFF)
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-black text-slate-900">₹{item.total_price}</div>
-                          <div className="text-[10px] text-mint-600 font-bold">
-                            Locked Net Rate
-                          </div>
+                          <div className="font-bold text-slate-900">₹{item.total_price}</div>
+                          <div className="text-[10px] text-teal-700 font-semibold">Locked Rate</div>
                         </div>
                       </div>
                     ))}
@@ -427,65 +435,64 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
                 </div>
 
                 {/* Total Locked Amount */}
-                <div className="p-4 bg-emerald-50 rounded-xl border-2 border-slate-900 flex items-center justify-between">
+                <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between">
                   <div>
-                    <div className="text-xs text-slate-500 font-bold">Final Locked Bill (Collect at Counter):</div>
-                    <div className="text-2xl font-black text-slate-900">₹{scannedEstimate.total_discounted_price}</div>
+                    <div className="text-xs text-slate-500 font-medium">Final Quoted Bill (Collect at Counter):</div>
+                    <div className="text-2xl font-bold text-slate-900">₹{scannedEstimate.total_discounted_price}</div>
                   </div>
                   <div className="text-right text-xs">
-                    <span className="font-bold text-slate-500">Customer Saved:</span>
-                    <div className="text-base font-black text-emerald-600">₹{scannedEstimate.total_savings}</div>
+                    <span className="text-slate-500">Customer Saved:</span>
+                    <div className="text-base font-bold text-emerald-700">₹{scannedEstimate.total_savings}</div>
                   </div>
                 </div>
 
-                {/* Dispense Action */}
                 {scannedEstimate.status === 'RESERVED' ? (
                   <button
                     onClick={handleDispense}
-                    className="w-full cartoon-btn cartoon-btn-mint py-3.5 text-base shadow-cartoon-hover"
+                    className="w-full clinical-btn-primary py-3 text-sm"
                   >
-                    <CheckCircle2 className="w-5 h-5" />
+                    <CheckCircle2 className="w-4 h-4" />
                     <span>Verify Rx & Dispense Medicines (Collect ₹{scannedEstimate.total_discounted_price})</span>
                   </button>
                 ) : (
-                  <div className="p-4 bg-slate-100 rounded-xl border-2 border-slate-300 text-center font-bold text-slate-600 text-sm">
+                  <div className="p-3 bg-slate-100 rounded-lg border border-slate-200 text-center font-bold text-slate-600 text-xs">
                     ✅ This estimate has already been verified and dispensed!
                   </div>
                 )}
 
                 {dispenseSuccess && (
-                  <div className="p-3 bg-emerald-100 border-2 border-emerald-500 rounded-xl text-xs font-black text-emerald-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    {dispenseSuccess} Customer can now post a Verified Pickup review!
+                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-800 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    {dispenseSuccess}
                   </div>
                 )}
               </div>
             ) : (
               <div className="p-12 text-center text-slate-400 space-y-2">
-                <DrPillMascot size={70} className="mx-auto opacity-40" />
-                <div className="font-bold text-sm">No estimate slip loaded yet.</div>
-                <div className="text-xs">Type or scan a valid token like <code>EST-894102</code> to inspect.</div>
+                <QrCode className="w-12 h-12 mx-auto text-slate-300" />
+                <div className="font-semibold text-sm">No estimate slip loaded yet</div>
+                <div className="text-xs">Type or scan an active estimate code to preview.</div>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* TAB 2: DYNAMIC EXPIRY DISCOUNTING */}
+      {/* TAB 3: DYNAMIC EXPIRY DISCOUNTING */}
       {activeTab === 'dynamic_discounts' && (
-        <div className="cartoon-card p-6 bg-white space-y-6">
+        <div className="clinical-card p-6 bg-white space-y-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <Sliders className="w-6 h-6 text-sunny-500" />
-                Dynamic Expiry Discounting Engine ⏳
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-teal-600" />
+                <span>Dynamic Expiry Discounting Engine</span>
               </h3>
-              <p className="text-slate-600 text-sm font-semibold">
-                Liquidate stock nearing expiry within 60 days. Increase discounts with one touch—nearby customers immediately discover your special clearance deals!
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Liquidate stock nearing expiry (&lt;60 days). Increasing clearance discounts immediately reflects in customer discovery.
               </p>
             </div>
-            <div className="cartoon-badge bg-sunny-100 text-sunny-800">
-              {nearExpiryCount} Near-Expiry Alert Flags
+            <div className="clinical-badge bg-amber-50 text-amber-800 border border-amber-200">
+              {nearExpiryCount} Near-Expiry Flags
             </div>
           </div>
 
@@ -493,37 +500,37 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
             {inventoryList
               .filter(item => item.is_near_expiry)
               .map(item => (
-                <div key={item.id} className="cartoon-card p-4 bg-sunny-50 border-2 border-sunny-400 space-y-3">
+                <div key={item.id} className="p-4 rounded-xl border border-amber-200 bg-amber-50/40 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-black text-slate-900 text-base">{item.medicine?.brand_name}</div>
-                      <div className="text-xs text-slate-600 font-bold">{item.medicine?.generic_salt}</div>
+                      <div className="font-bold text-slate-900 text-sm">{item.medicine?.brand_name}</div>
+                      <div className="text-xs text-slate-500">{item.medicine?.generic_salt}</div>
                     </div>
-                    <span className="cartoon-badge bg-red-100 text-red-700 border-red-500 text-[11px]">
-                      {item.days_until_expiry} Days Left!
+                    <span className="text-[11px] font-bold px-2 py-0.5 bg-rose-100 text-rose-700 rounded border border-rose-300">
+                      {item.days_until_expiry} Days Left
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-xs bg-white p-2.5 rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-3 gap-2 text-xs bg-white p-2.5 rounded-lg border border-slate-200">
                     <div>
-                      <span className="text-slate-400 font-bold">Batch:</span>
-                      <div className="font-mono font-bold text-slate-800">{item.batch_no}</div>
+                      <span className="text-slate-400">Batch:</span>
+                      <div className="font-mono font-semibold text-slate-800">{item.batch_no}</div>
                     </div>
                     <div>
-                      <span className="text-slate-400 font-bold">Stock:</span>
+                      <span className="text-slate-400">Stock:</span>
                       <div className="font-bold text-slate-800">{item.stock_quantity} strips</div>
                     </div>
                     <div>
-                      <span className="text-slate-400 font-bold">Retail MRP:</span>
+                      <span className="text-slate-400">MRP:</span>
                       <div className="font-bold text-slate-800">₹{item.medicine?.mrp}</div>
                     </div>
                   </div>
 
-                  {/* Interactive Discount Slider */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between text-xs font-black">
+                  {/* Interactive Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold">
                       <span className="text-slate-700">Clearance Discount:</span>
-                      <span className="text-emerald-700 font-mono text-sm">{item.current_effective_discount}% OFF</span>
+                      <span className="text-teal-700 font-mono font-bold">{item.current_effective_discount}% OFF</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <input
@@ -533,17 +540,10 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
                         step="5"
                         value={item.current_effective_discount}
                         onChange={(e) => handleUpdateDiscount(item, parseFloat(e.target.value))}
-                        className="w-full accent-emerald-500 cursor-pointer"
+                        className="w-full accent-teal-600 cursor-pointer"
                       />
-                      <span className="text-xs font-bold text-slate-500 shrink-0">50% Max</span>
+                      <span className="text-xs text-slate-400 shrink-0">50% Max</span>
                     </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-500 font-semibold flex justify-between items-center pt-1 border-t border-slate-200">
-                    <span>Effective Customer Price:</span>
-                    <strong className="text-emerald-700 text-xs font-black">
-                      ₹{(item.medicine?.mrp * (1 - item.current_effective_discount / 100)).toFixed(2)}
-                    </strong>
                   </div>
                 </div>
               ))}
@@ -551,77 +551,65 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
         </div>
       )}
 
-      {/* TAB 3: POS INVENTORY & CSV SYNC */}
+      {/* TAB 4: LIVE STORE INVENTORY */}
       {activeTab === 'pos_inventory' && (
-        <div className="cartoon-card p-6 bg-white space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="clinical-card p-6 bg-white space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <Package className="w-6 h-6 text-mint-500" />
-                POS Daily Stock Ingestion & Management
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Package className="w-5 h-5 text-teal-600" />
+                <span>Live Stock Inventory for {pharmacyProfile?.store_name}</span>
               </h3>
-              <p className="text-slate-600 text-sm font-semibold">
-                Sync daily inventory effortlessly via Marg ERP, Vyapar, or Tally CSV exports without tedious manual typing.
+              <p className="text-xs text-slate-500 font-medium">
+                Active medicine inventory mapped to this pharmacy. Updated in real-time by Distributor Bill OCR.
               </p>
             </div>
-
-            {/* Quick POS Export Loaders */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => handleUploadPosCsv('Marg ERP')}
-                className="cartoon-btn cartoon-btn-secondary text-xs"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Simulate Marg ERP Sync</span>
-              </button>
-              <button
-                onClick={() => handleUploadPosCsv('Vyapar')}
-                className="cartoon-btn cartoon-btn-secondary text-xs"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Simulate Vyapar Sync</span>
-              </button>
-            </div>
+            <button
+              onClick={() => { playPop(); setActiveTab('bill_ocr'); }}
+              className="clinical-btn-primary text-xs py-2 px-3"
+            >
+              <Scan className="w-3.5 h-3.5" />
+              <span>Scan New Purchase Bill</span>
+            </button>
           </div>
 
-          {/* Live Inventory Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-2 border-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-900 text-white font-black uppercase">
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="p-3">Medicine & Salt</th>
+                  <th className="p-3">Medicine & Generic Salt</th>
                   <th className="p-3">Batch</th>
                   <th className="p-3">Expiry Date</th>
-                  <th className="p-3">Stock Qty</th>
+                  <th className="p-3">In-Stock Qty</th>
                   <th className="p-3">Retail MRP</th>
                   <th className="p-3">Active Discount</th>
-                  <th className="p-3">Category</th>
+                  <th className="p-3">Schedule</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-slate-900 font-semibold">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {inventoryList.map(item => (
-                  <tr key={item.id} className={item.is_near_expiry ? 'bg-sunny-50' : 'bg-white hover:bg-slate-50'}>
-                    <td className="p-3 font-black text-slate-900">
-                      <div>{item.medicine?.brand_name}</div>
+                  <tr key={item.id} className={item.is_near_expiry ? 'bg-amber-50/50' : 'hover:bg-slate-50'}>
+                    <td className="p-3">
+                      <div className="font-bold text-slate-900">{item.medicine?.brand_name}</div>
                       <div className="text-[11px] text-slate-500 font-normal">{item.medicine?.generic_salt}</div>
                     </td>
                     <td className="p-3 font-mono">{item.batch_no}</td>
                     <td className="p-3 font-mono">
                       {item.expiry_date}
                       {item.is_near_expiry && (
-                        <span className="block text-[10px] text-red-600 font-black">
-                          ({item.days_until_expiry} days left)
+                        <span className="block text-[10px] text-rose-600 font-bold">
+                          ({item.days_until_expiry}d left)
                         </span>
                       )}
                     </td>
-                    <td className="p-3 font-black text-slate-900">{item.stock_quantity} units</td>
-                    <td className="p-3">₹{item.medicine?.mrp}</td>
-                    <td className="p-3 font-black text-emerald-700">
-                      {item.current_effective_discount}% OFF
-                    </td>
+                    <td className="p-3 font-bold text-slate-900">{item.stock_quantity} units</td>
+                    <td className="p-3 font-mono font-bold">₹{item.medicine?.mrp}</td>
+                    <td className="p-3 font-mono text-teal-700 font-bold">{item.current_effective_discount}% OFF</td>
                     <td className="p-3">
-                      <span className={`cartoon-badge ${
-                        item.medicine?.schedule_category === 'Schedule H' ? 'bg-sunny-200 text-sunny-800' : 'bg-mint-200 text-mint-800'
+                      <span className={`clinical-badge ${
+                        item.medicine?.schedule_category === 'Schedule H' 
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200' 
+                          : 'bg-teal-50 text-teal-800 border border-teal-200'
                       }`}>
                         {item.medicine?.schedule_category}
                       </span>
@@ -634,55 +622,48 @@ export default function ChemistDashboard({ initialEstimateToken = null, onClearT
         </div>
       )}
 
-      {/* TAB 4: SCHEDULE H / H1 COMPLIANCE REGISTER */}
+      {/* TAB 5: REGULATORY COMPLIANCE REGISTER */}
       {activeTab === 'compliance_register' && (
-        <div className="cartoon-card p-6 bg-white space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-lavender-600" />
-                Drugs & Cosmetics Act Compliance Audit Register
-              </h3>
-              <p className="text-slate-600 text-sm font-semibold">
-                Statutory digital record keeping for all Schedule H / H1 prescription medicines dispensed via Medishop estimate slips.
-              </p>
-            </div>
-            <div className="cartoon-badge bg-lavender-100 text-lavender-800">
-              Regulatory Audit Ready
-            </div>
+        <div className="clinical-card p-6 bg-white space-y-5">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-teal-600" />
+              <span>Drugs & Cosmetics Act Compliance Register</span>
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Mandatory statutory digital logs for all Schedule H / H1 prescription medicines dispensed at this counter.
+            </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-2 border-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-900 text-white font-black uppercase">
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
                   <th className="p-3">Log ID</th>
                   <th className="p-3">Customer / Patient</th>
                   <th className="p-3">Prescribing Doctor</th>
                   <th className="p-3">Prescription ID</th>
                   <th className="p-3">Restricted Medicines</th>
-                  <th className="p-3">Dispensed At</th>
-                  <th className="p-3">Chemist Signature</th>
+                  <th className="p-3">Timestamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-slate-900 font-semibold">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {complianceLogs.map(log => (
-                  <tr key={log.id} className="bg-white hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-slate-900">{log.id}</td>
-                    <td className="p-3 font-black text-slate-900">{log.patient_name}</td>
-                    <td className="p-3 text-slate-700">{log.doctor_name}</td>
-                    <td className="p-3 font-mono text-purple-700 font-bold">{log.rx_id}</td>
+                  <tr key={log.id} className="hover:bg-slate-50">
+                    <td className="p-3 font-mono font-semibold text-slate-900">{log.id}</td>
+                    <td className="p-3 font-bold text-slate-900">{log.patient_name}</td>
+                    <td className="p-3 text-slate-600">{log.doctor_name}</td>
+                    <td className="p-3 font-mono text-teal-700 font-bold">{log.rx_id}</td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {log.drug_names.map((name, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-sunny-100 rounded border border-sunny-400 text-[10px] font-black text-slate-900">
+                          <span key={i} className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-semibold">
                             {name}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="p-3 text-slate-500 font-mono text-[11px]">{new Date(log.verified_at).toLocaleString()}</td>
-                    <td className="p-3 font-bold text-emerald-700">{log.verified_by_chemist}</td>
+                    <td className="p-3 font-mono text-slate-400">{new Date(log.verified_at).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
