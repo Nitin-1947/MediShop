@@ -7,7 +7,6 @@ import EstimateSlipModal from './components/EstimateSlipModal';
 import VerifiedReviewsModal from './components/VerifiedReviewsModal';
 import AuthModal from './components/AuthModal';
 import { ShoppingBag, X, Trash2, ArrowRight, ShieldCheck, Heart, User, Store } from 'lucide-react';
-import { playPop, playSuccessChime } from './utils/audio';
 
 export default function App() {
   // Authentication & active session
@@ -171,14 +170,14 @@ export default function App() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 font-semibold text-slate-600">
             <button
-              onClick={() => { playPop(); handleOpenAuth('chemist'); }}
+              onClick={() => handleOpenAuth('chemist')}
               className="hover:text-teal-700"
             >
               Medical Shop Owner Registration (Drug License)
             </button>
             <span>•</span>
             <button
-              onClick={() => { playPop(); handleOpenAuth('customer'); }}
+              onClick={() => handleOpenAuth('customer')}
               className="hover:text-teal-700"
             >
               Customer Phone Signup
@@ -234,7 +233,7 @@ export default function App() {
                   </h3>
                 </div>
                 <button
-                  onClick={() => { playPop(); setIsCartDrawerOpen(false); }}
+                  onClick={() => setIsCartDrawerOpen(false)}
                   className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
                 >
                   <X className="w-4 h-4" />
@@ -257,10 +256,7 @@ export default function App() {
                       <div className="flex items-center gap-2.5">
                         <span className="font-mono font-bold text-slate-900">₹{(item.mrp * item.qty).toFixed(2)}</span>
                         <button
-                          onClick={() => {
-                            playPop();
-                            setCartItems(prev => prev.filter(i => i.id !== item.id));
-                          }}
+                          onClick={() => setCartItems(prev => prev.filter(i => i.id !== item.id))}
                           className="text-slate-400 hover:text-rose-500"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -280,7 +276,6 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => {
-                    playPop();
                     setIsCartDrawerOpen(false);
                     setCurrentView('customer');
                   }}

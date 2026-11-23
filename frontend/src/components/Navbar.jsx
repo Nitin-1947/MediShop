@@ -1,19 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   ShoppingBag, 
   MapPin, 
-  Volume2, 
-  VolumeX, 
   Store, 
   Search, 
-  Cpu, 
   User, 
-  LogOut, 
-  ShieldCheck, 
-  ArrowRightLeft,
-  ChevronDown
+  ArrowRightLeft 
 } from 'lucide-react';
-import { toggleMute, getMuteState, playPop } from '../utils/audio';
 
 export default function Navbar({ 
   currentView, 
@@ -24,20 +17,12 @@ export default function Navbar({
   onOpenAuth, 
   onLogout 
 }) {
-  const [muted, setMuted] = useState(getMuteState());
-
-  const handleToggleSound = () => {
-    const isNowMuted = toggleMute();
-    setMuted(isNowMuted);
-    if (!isNowMuted) playPop();
-  };
-
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div 
-          onClick={() => { playPop(); onChangeView(currentUser?.role === 'chemist' ? 'chemist' : 'customer'); }}
+          onClick={() => onChangeView(currentUser?.role === 'chemist' ? 'chemist' : 'customer')}
           className="flex items-center gap-3 cursor-pointer group"
         >
           <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm group-hover:bg-teal-700 transition-colors">
@@ -62,7 +47,7 @@ export default function Navbar({
         {/* View Navigation Switcher */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
           <button
-            onClick={() => { playPop(); onChangeView('customer'); }}
+            onClick={() => onChangeView('customer')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               currentView === 'customer' 
                 ? 'bg-white text-teal-800 shadow-xs border border-slate-200' 
@@ -74,7 +59,7 @@ export default function Navbar({
           </button>
 
           <button
-            onClick={() => { playPop(); onChangeView('chemist'); }}
+            onClick={() => onChangeView('chemist')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               currentView === 'chemist' 
                 ? 'bg-white text-teal-800 shadow-xs border border-slate-200' 
@@ -86,9 +71,8 @@ export default function Navbar({
           </button>
         </nav>
 
-        {/* Right side: User Session / Auth + Audio + Cart */}
+        {/* Right side: User Session / Auth + Cart */}
         <div className="flex items-center gap-2.5">
-          {/* Active Auth Profile Indicator / Switch Button */}
           {currentUser ? (
             <div className="flex items-center gap-2">
               <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs flex items-center gap-2">
@@ -121,7 +105,7 @@ export default function Navbar({
 
               <button
                 type="button"
-                onClick={() => { playPop(); onOpenAuth(currentUser.role === 'chemist' ? 'customer' : 'chemist'); }}
+                onClick={() => onOpenAuth(currentUser.role === 'chemist' ? 'customer' : 'chemist')}
                 title="Switch Portal Account"
                 className="p-2 text-slate-500 hover:text-teal-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-xs font-semibold flex items-center gap-1"
               >
@@ -131,7 +115,7 @@ export default function Navbar({
             </div>
           ) : (
             <button
-              onClick={() => { playPop(); onOpenAuth('customer'); }}
+              onClick={() => onOpenAuth('customer')}
               className="clinical-btn-secondary text-xs py-1.5 px-3"
             >
               <User className="w-3.5 h-3.5 text-teal-600" />
@@ -139,18 +123,9 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Sound Toggle */}
-          <button
-            onClick={handleToggleSound}
-            title={muted ? "Unmute Sound" : "Mute Sound"}
-            className="w-9 h-9 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 transition-colors"
-          >
-            {muted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-teal-600" />}
-          </button>
-
           {/* Cart Button */}
           <button
-            onClick={() => { playPop(); onOpenCart(); }}
+            onClick={() => onOpenCart()}
             className="clinical-btn-primary py-2 px-3 text-xs relative"
           >
             <ShoppingBag className="w-4 h-4" />
@@ -167,7 +142,7 @@ export default function Navbar({
       {/* Mobile Nav Pills */}
       <div className="flex md:hidden px-4 pb-2.5 pt-1 gap-1.5 overflow-x-auto bg-slate-50 border-t border-slate-200 text-xs font-bold">
         <button
-          onClick={() => { playPop(); onChangeView('customer'); }}
+          onClick={() => onChangeView('customer')}
           className={`px-3 py-1.5 rounded-lg shrink-0 ${
             currentView === 'customer' ? 'bg-teal-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
           }`}
@@ -175,7 +150,7 @@ export default function Navbar({
           Customer Portal
         </button>
         <button
-          onClick={() => { playPop(); onChangeView('chemist'); }}
+          onClick={() => onChangeView('chemist')}
           className={`px-3 py-1.5 rounded-lg shrink-0 ${
             currentView === 'chemist' ? 'bg-teal-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
           }`}

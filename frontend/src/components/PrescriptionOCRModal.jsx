@@ -12,7 +12,6 @@ import {
   Zap,
   Info
 } from 'lucide-react';
-import { playPop, playSuccessChime } from '../utils/audio';
 
 export default function PrescriptionOCRModal({ isOpen, onClose, onAddPrescriptionItems }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -24,7 +23,6 @@ export default function PrescriptionOCRModal({ isOpen, onClose, onAddPrescriptio
   const handleRunOcr = async (sampleType) => {
     setSelectedSample(sampleType);
     setIsScanning(true);
-    playPop();
 
     try {
       const response = await fetch('/api/prescriptions/ocr', {
@@ -37,7 +35,6 @@ export default function PrescriptionOCRModal({ isOpen, onClose, onAddPrescriptio
       setTimeout(() => {
         setIsScanning(false);
         setOcrResult(data);
-        playSuccessChime();
       }, 900);
     } catch (err) {
       console.error("OCR parse error:", err);
@@ -52,7 +49,6 @@ export default function PrescriptionOCRModal({ isOpen, onClose, onAddPrescriptio
       qty: item.recommended_qty || 1
     }));
     onAddPrescriptionItems(itemsToAdd, ocrResult.prescription_metadata);
-    playSuccessChime();
     onClose();
   };
 
@@ -61,7 +57,7 @@ export default function PrescriptionOCRModal({ isOpen, onClose, onAddPrescriptio
       <div className="clinical-card bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6 relative">
         {/* Close Button */}
         <button
-          onClick={() => { playPop(); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
         >
           <X className="w-4 h-4" />

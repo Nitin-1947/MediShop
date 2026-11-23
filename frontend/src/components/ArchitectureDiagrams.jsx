@@ -20,7 +20,6 @@ import {
   Building2,
   Check
 } from 'lucide-react';
-import { playPop } from '../utils/audio';
 
 export default function ArchitectureDiagrams() {
   const [activeTab, setActiveTab] = useState('system_arch');
@@ -129,7 +128,7 @@ export default function ArchitectureDiagrams() {
       {/* Navigation Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
         <button
-          onClick={() => { playPop(); setActiveTab('system_arch'); }}
+          onClick={() => setActiveTab('system_arch')}
           className={`clinical-btn ${
             activeTab === 'system_arch' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -140,7 +139,7 @@ export default function ArchitectureDiagrams() {
           <span>1. System Architecture Diagram</span>
         </button>
         <button
-          onClick={() => { playPop(); setActiveTab('schedule_matrix'); }}
+          onClick={() => setActiveTab('schedule_matrix')}
           className={`clinical-btn ${
             activeTab === 'schedule_matrix' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -151,7 +150,7 @@ export default function ArchitectureDiagrams() {
           <span>2. Drug Schedule & DPDP Compliance</span>
         </button>
         <button
-          onClick={() => { playPop(); setActiveTab('cart_algorithm'); }}
+          onClick={() => setActiveTab('cart_algorithm')}
           className={`clinical-btn ${
             activeTab === 'cart_algorithm' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -162,7 +161,7 @@ export default function ArchitectureDiagrams() {
           <span>3. Multi-Item Cart & Split Algorithm</span>
         </button>
         <button
-          onClick={() => { playPop(); setActiveTab('roadmap'); }}
+          onClick={() => setActiveTab('roadmap')}
           className={`clinical-btn ${
             activeTab === 'roadmap' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -192,7 +191,7 @@ export default function ArchitectureDiagrams() {
             <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
               {/* Client Layer */}
               <button
-                onClick={() => { playPop(); setSelectedNode('client'); }}
+                onClick={() => setSelectedNode('client')}
                 className={`w-full p-4 rounded-xl text-left transition-all ${
                   selectedNode === 'client'
                     ? 'bg-white border-2 border-teal-500 shadow-md ring-2 ring-teal-500/20'
@@ -215,7 +214,7 @@ export default function ArchitectureDiagrams() {
 
               {/* Gateway Layer */}
               <button
-                onClick={() => { playPop(); setSelectedNode('gateway'); }}
+                onClick={() => setSelectedNode('gateway')}
                 className={`w-full p-4 rounded-xl text-left transition-all ${
                   selectedNode === 'gateway'
                     ? 'bg-white border-2 border-teal-500 shadow-md ring-2 ring-teal-500/20'
@@ -237,7 +236,7 @@ export default function ArchitectureDiagrams() {
               {/* Dual Engines */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <button
-                  onClick={() => { playPop(); setSelectedNode('ocr'); }}
+                  onClick={() => setSelectedNode('ocr')}
                   className={`p-3.5 rounded-xl text-left transition-all ${
                     selectedNode === 'ocr'
                       ? 'bg-white border-2 border-teal-500 shadow-md ring-2 ring-teal-500/20'
@@ -256,7 +255,7 @@ export default function ArchitectureDiagrams() {
                 </button>
 
                 <button
-                  onClick={() => { playPop(); setSelectedNode('geospatial'); }}
+                  onClick={() => setSelectedNode('geospatial')}
                   className={`p-3.5 rounded-xl text-left transition-all ${
                     selectedNode === 'geospatial'
                       ? 'bg-white border-2 border-teal-500 shadow-md ring-2 ring-teal-500/20'
@@ -279,7 +278,7 @@ export default function ArchitectureDiagrams() {
 
               {/* Database Layer */}
               <button
-                onClick={() => { playPop(); setSelectedNode('database'); }}
+                onClick={() => setSelectedNode('database')}
                 className={`w-full p-4 rounded-xl text-left transition-all ${
                   selectedNode === 'database'
                     ? 'bg-white border-2 border-teal-500 shadow-md ring-2 ring-teal-500/20'

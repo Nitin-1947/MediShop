@@ -16,7 +16,6 @@ import {
   Building2,
   Clock
 } from 'lucide-react';
-import { playPop, playSuccessChime } from '../utils/audio';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole = 'customer' }) {
   const [selectedRole, setSelectedRole] = useState(initialRole); // 'customer' | 'chemist'
@@ -56,12 +55,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
 
     if (!showOtpField && mode === 'signup') {
       setShowOtpField(true);
-      playPop();
       return;
     }
 
     setIsLoading(true);
-    playPop();
 
     try {
       const endpoint = mode === 'signup' ? '/api/auth/customer-signup' : '/api/auth/customer-login';
@@ -77,7 +74,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
       const data = await res.json();
 
       if (data.success) {
-        playSuccessChime();
         onAuthSuccess({
           role: 'customer',
           user: data.user
@@ -98,7 +94,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
     e.preventDefault();
     setErrorMsg(null);
     setIsLoading(true);
-    playPop();
 
     try {
       if (mode === 'signup') {
@@ -126,7 +121,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
         const data = await res.json();
 
         if (data.success) {
-          playSuccessChime();
           onAuthSuccess({
             role: 'chemist',
             pharmacy: data.pharmacy
@@ -147,7 +141,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
         const data = await res.json();
 
         if (data.success) {
-          playSuccessChime();
           onAuthSuccess({
             role: 'chemist',
             pharmacy: data.pharmacy
@@ -169,7 +162,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[92vh] overflow-y-auto p-6 space-y-6 relative">
         {/* Close Button */}
         <button
-          onClick={() => { playPop(); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
         >
           <X className="w-4 h-4" />
@@ -193,7 +186,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
         <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-xl">
           <button
             type="button"
-            onClick={() => { playPop(); setSelectedRole('customer'); setErrorMsg(null); }}
+            onClick={() => { setSelectedRole('customer'); setErrorMsg(null); }}
             className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
               selectedRole === 'customer'
                 ? 'bg-white text-teal-800 shadow-sm border border-slate-200'
@@ -206,7 +199,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
 
           <button
             type="button"
-            onClick={() => { playPop(); setSelectedRole('chemist'); setErrorMsg(null); }}
+            onClick={() => { setSelectedRole('chemist'); setErrorMsg(null); }}
             className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
               selectedRole === 'chemist'
                 ? 'bg-white text-teal-800 shadow-sm border border-slate-200'
@@ -225,7 +218,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
           </span>
           <div className="flex items-center gap-2 text-xs">
             <button
-              onClick={() => { playPop(); setMode('signup'); setShowOtpField(false); setErrorMsg(null); }}
+              onClick={() => { setMode('signup'); setShowOtpField(false); setErrorMsg(null); }}
               className={`font-semibold pb-0.5 border-b-2 transition-colors ${
                 mode === 'signup' ? 'text-teal-700 border-teal-600' : 'text-slate-400 border-transparent hover:text-slate-600'
               }`}
@@ -234,7 +227,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
             </button>
             <span className="text-slate-300">•</span>
             <button
-              onClick={() => { playPop(); setMode('login'); setErrorMsg(null); }}
+              onClick={() => { setMode('login'); setErrorMsg(null); }}
               className={`font-semibold pb-0.5 border-b-2 transition-colors ${
                 mode === 'login' ? 'text-teal-700 border-teal-600' : 'text-slate-400 border-transparent hover:text-slate-600'
               }`}

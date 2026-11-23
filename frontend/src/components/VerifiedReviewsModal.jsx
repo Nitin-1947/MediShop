@@ -8,7 +8,6 @@ import {
   MessageSquare, 
   Building2 
 } from 'lucide-react';
-import { playPop, playSuccessChime } from '../utils/audio';
 
 export default function VerifiedReviewsModal({ isOpen, onClose, pharmacy }) {
   const [reviewsList, setReviewsList] = useState([]);
@@ -41,7 +40,6 @@ export default function VerifiedReviewsModal({ isOpen, onClose, pharmacy }) {
     if (!comment.trim()) return;
 
     setIsSubmitting(true);
-    playPop();
 
     try {
       const res = await fetch('/api/reviews', {
@@ -57,7 +55,6 @@ export default function VerifiedReviewsModal({ isOpen, onClose, pharmacy }) {
       });
       const data = await res.json();
       if (data.success) {
-        playSuccessChime();
         confetti({ particleCount: 45, spread: 50 });
         setReviewsList(prev => [data.review, ...prev]);
         setComment('');
@@ -74,7 +71,7 @@ export default function VerifiedReviewsModal({ isOpen, onClose, pharmacy }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="clinical-card bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-6 relative">
         <button
-          onClick={() => { playPop(); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
         >
           <X className="w-4 h-4" />

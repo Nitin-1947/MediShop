@@ -21,7 +21,6 @@ import {
   BadgeCheck,
   Check
 } from 'lucide-react';
-import { playPop, playSuccessChime, playCashDing } from '../utils/audio';
 
 export default function ChemistDashboard({ 
   initialEstimateToken = null, 
@@ -104,7 +103,6 @@ export default function ChemistDashboard({
     setIsScanning(true);
     setScanError(null);
     setDispenseSuccess(null);
-    playPop();
 
     try {
       const res = await fetch(`/api/estimates/${tokenId.trim()}`);
@@ -114,7 +112,6 @@ export default function ChemistDashboard({
         setIsScanning(false);
         if (data.success && data.estimate) {
           setScannedEstimate(data.estimate);
-          playSuccessChime();
         } else {
           setScanError(data.error || "Estimate token not recognized.");
           setScannedEstimate(null);
@@ -129,7 +126,6 @@ export default function ChemistDashboard({
   // Dispense & Redeem QR Token
   const handleDispense = async () => {
     if (!scannedEstimate) return;
-    playPop();
 
     try {
       const res = await fetch('/api/estimates/verify-redeem', {
@@ -144,7 +140,6 @@ export default function ChemistDashboard({
       const data = await res.json();
 
       if (data.success) {
-        playCashDing();
         confetti({
           particleCount: 70,
           spread: 60,
@@ -164,8 +159,6 @@ export default function ChemistDashboard({
 
   // Dynamic Discount Update (<60 Days Liquidation)
   const handleUpdateDiscount = async (invItem, newDiscount) => {
-    playPop();
-
     try {
       const res = await fetch('/api/chemist/inventory/update-discount', {
         method: 'POST',
@@ -177,7 +170,6 @@ export default function ChemistDashboard({
       });
       const data = await res.json();
       if (data.success) {
-        playSuccessChime();
         setInventoryList(prev => prev.map(item => 
           item.id === invItem.id ? { ...item, current_effective_discount: newDiscount } : item
         ));
@@ -226,7 +218,7 @@ export default function ChemistDashboard({
               {nearExpiryCount} Items &lt; 60 Days
             </div>
             <button
-              onClick={() => { playPop(); setActiveTab('dynamic_discounts'); }}
+              onClick={() => setActiveTab('dynamic_discounts')}
               className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline block"
             >
               Set Liquidation Discount →
@@ -238,7 +230,7 @@ export default function ChemistDashboard({
       {/* Tabs Navigation */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
         <button
-          onClick={() => { playPop(); setActiveTab('bill_ocr'); }}
+          onClick={() => setActiveTab('bill_ocr')}
           className={`clinical-btn ${
             activeTab === 'bill_ocr' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -251,7 +243,7 @@ export default function ChemistDashboard({
         </button>
 
         <button
-          onClick={() => { playPop(); setActiveTab('qr_scanner'); }}
+          onClick={() => setActiveTab('qr_scanner')}
           className={`clinical-btn ${
             activeTab === 'qr_scanner' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -263,7 +255,7 @@ export default function ChemistDashboard({
         </button>
 
         <button
-          onClick={() => { playPop(); setActiveTab('dynamic_discounts'); }}
+          onClick={() => setActiveTab('dynamic_discounts')}
           className={`clinical-btn ${
             activeTab === 'dynamic_discounts' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -275,7 +267,7 @@ export default function ChemistDashboard({
         </button>
 
         <button
-          onClick={() => { playPop(); setActiveTab('pos_inventory'); }}
+          onClick={() => setActiveTab('pos_inventory')}
           className={`clinical-btn ${
             activeTab === 'pos_inventory' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -287,7 +279,7 @@ export default function ChemistDashboard({
         </button>
 
         <button
-          onClick={() => { playPop(); setActiveTab('compliance_register'); }}
+          onClick={() => setActiveTab('compliance_register')}
           className={`clinical-btn ${
             activeTab === 'compliance_register' 
               ? 'bg-teal-600 text-white shadow-sm' 
@@ -565,7 +557,7 @@ export default function ChemistDashboard({
               </p>
             </div>
             <button
-              onClick={() => { playPop(); setActiveTab('bill_ocr'); }}
+              onClick={() => setActiveTab('bill_ocr')}
               className="clinical-btn-primary text-xs py-2 px-3"
             >
               <Scan className="w-3.5 h-3.5" />

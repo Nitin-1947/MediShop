@@ -11,7 +11,6 @@ import {
   QrCode,
   Building2
 } from 'lucide-react';
-import { playPop } from '../utils/audio';
 
 export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChemistScanner }) {
   const [secondsRemaining, setSecondsRemaining] = useState(60 * 60);
@@ -50,7 +49,7 @@ export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChe
       <div className="clinical-card bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 space-y-5 relative">
         {/* Close Button */}
         <button
-          onClick={() => { playPop(); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
         >
           <X className="w-4 h-4" />
@@ -168,10 +167,7 @@ export default function EstimateSlipModal({ isOpen, onClose, estimate, onOpenChe
 
         {/* Quick Simulation Link */}
         <button
-          onClick={() => {
-            playPop();
-            onOpenChemistScanner(estimate.id);
-          }}
+          onClick={() => onOpenChemistScanner(estimate.id)}
           className="w-full clinical-btn-primary py-2.5 text-xs"
         >
           <QrCode className="w-4 h-4" />

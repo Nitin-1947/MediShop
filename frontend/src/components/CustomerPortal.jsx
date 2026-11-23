@@ -23,7 +23,6 @@ import {
   Filter,
   Check
 } from 'lucide-react';
-import { playPop, playSuccessChime, playCashDing } from '../utils/audio';
 
 export default function CustomerPortal({ 
   onOpenOcrModal, 
@@ -131,7 +130,6 @@ export default function CustomerPortal({
 
   // Cart operations
   const handleAddToCart = (medicine) => {
-    playPop();
     setCartItems(prev => {
       const existing = prev.find(item => item.id === medicine.id);
       if (existing) {
@@ -144,7 +142,6 @@ export default function CustomerPortal({
   };
 
   const handleUpdateQty = (medicineId, delta) => {
-    playPop();
     setCartItems(prev => {
       return prev
         .map(item => {
@@ -159,13 +156,11 @@ export default function CustomerPortal({
   };
 
   const handleRemoveFromCart = (medicineId) => {
-    playPop();
     setCartItems(prev => prev.filter(i => i.id !== medicineId));
   };
 
   // Trigger locked estimate reservation
   const handleCreateReservation = async (pharmacyId) => {
-    playPop();
     try {
       const res = await fetch('/api/estimates/create', {
         method: 'POST',
@@ -179,7 +174,6 @@ export default function CustomerPortal({
       });
       const data = await res.json();
       if (data.success) {
-        playSuccessChime();
         confetti({ particleCount: 85, spread: 75 });
         onGenerateEstimate(data.estimate);
       }
@@ -206,7 +200,7 @@ export default function CustomerPortal({
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
-              onClick={() => { playPop(); onOpenOcrModal(); }}
+              onClick={onOpenOcrModal}
               className="px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs transition-all shadow-sm flex items-center gap-2"
             >
               <Camera className="w-4 h-4" />
@@ -245,7 +239,7 @@ export default function CustomerPortal({
             {[1.0, 3.0, 5.0].map(r => (
               <button
                 key={r}
-                onClick={() => { playPop(); setRadiusKm(r); }}
+                onClick={() => setRadiusKm(r)}
                 className={`flex-1 py-1 rounded text-xs font-semibold transition-all ${
                   radiusKm === r ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
                 }`}
@@ -262,7 +256,7 @@ export default function CustomerPortal({
               <span>24/7 Night Duty Only</span>
             </div>
             <button
-              onClick={() => { playPop(); setIs24x7Only(!is24x7Only); }}
+              onClick={() => setIs24x7Only(!is24x7Only)}
               className={`w-9 h-5 rounded-full transition-colors p-0.5 flex items-center ${
                 is24x7Only ? 'bg-teal-600 justify-end' : 'bg-slate-300 justify-start'
               }`}
@@ -280,7 +274,7 @@ export default function CustomerPortal({
           {['ALL', 'Antibiotic', 'Analgesic', 'Gastrointestinal', 'Anti-Allergic', 'Cardiovascular', 'OTC'].map(cat => (
             <button
               key={cat}
-              onClick={() => { playPop(); setSelectedCategory(cat); }}
+              onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 selectedCategory === cat 
                   ? 'bg-slate-900 text-white' 
@@ -421,7 +415,7 @@ export default function CustomerPortal({
               </div>
               {cartItems.length > 0 && (
                 <button
-                  onClick={() => { playPop(); setCartItems([]); }}
+                  onClick={() => setCartItems([])}
                   className="text-xs text-slate-400 hover:text-rose-600 font-semibold flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Clear

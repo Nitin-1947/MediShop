@@ -16,7 +16,6 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
-import { playPop, playSuccessChime, playCashDing } from '../utils/audio';
 
 export default function ChemistBillOCRScanner({ pharmacyId, onInventoryUpdated }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -33,7 +32,6 @@ export default function ChemistBillOCRScanner({ pharmacyId, onInventoryUpdated }
     setIsScanning(true);
     setCommitSuccess(null);
     setErrorMessage(null);
-    playPop();
 
     try {
       const res = await fetch('/api/chemist/invoice/ocr', {
@@ -49,7 +47,6 @@ export default function ChemistBillOCRScanner({ pharmacyId, onInventoryUpdated }
       setTimeout(() => {
         setIsScanning(false);
         if (data.success) {
-          playSuccessChime();
           setParsedInvoice(data.invoice_metadata);
           setEditableItems(data.line_items);
         } else {
@@ -76,7 +73,6 @@ export default function ChemistBillOCRScanner({ pharmacyId, onInventoryUpdated }
     if (!editableItems || editableItems.length === 0) return;
     setIsCommitting(true);
     setErrorMessage(null);
-    playPop();
 
     try {
       const res = await fetch('/api/chemist/invoice/commit', {
@@ -91,7 +87,6 @@ export default function ChemistBillOCRScanner({ pharmacyId, onInventoryUpdated }
       const data = await res.json();
 
       if (data.success) {
-        playCashDing();
         confetti({
           particleCount: 75,
           spread: 70,
