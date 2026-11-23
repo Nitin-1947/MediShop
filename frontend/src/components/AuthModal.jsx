@@ -305,7 +305,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
                     type="text"
                     value={customerPincode}
                     onChange={(e) => setCustomerPincode(e.target.value)}
-                    placeholder="560038 (Indiranagar, Bengaluru)"
+                    placeholder="e.g. 560001 (6-digit Pincode)"
                     className="clinical-input pl-9"
                   />
                 </div>
@@ -456,7 +456,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialRole 
                     <textarea
                       value={storeAddress}
                       onChange={(e) => setStoreAddress(e.target.value)}
-                      placeholder="Shop #12, 100ft Road, HAL 2nd Stage, Indiranagar, Bengaluru"
+                      placeholder="Store / Shop Address, Area & City"
                       rows={2}
                       className="clinical-input pl-9 resize-none"
                       required

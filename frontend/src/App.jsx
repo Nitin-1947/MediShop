@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import CustomerPortal from './components/CustomerPortal';
 import ChemistDashboard from './components/ChemistDashboard';
-import ArchitectureDiagrams from './components/ArchitectureDiagrams';
 import PrescriptionOCRModal from './components/PrescriptionOCRModal';
 import EstimateSlipModal from './components/EstimateSlipModal';
 import VerifiedReviewsModal from './components/VerifiedReviewsModal';
@@ -134,7 +133,14 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {currentView === 'customer' && (
+        {currentView === 'chemist' ? (
+          <ChemistDashboard
+            initialEstimateToken={chemistScannerToken}
+            onClearToken={() => setChemistScannerToken(null)}
+            activePharmacy={currentUser?.role === 'chemist' ? currentUser.pharmacy : null}
+            onSwitchToCustomer={() => setCurrentView('customer')}
+          />
+        ) : (
           <CustomerPortal
             onOpenOcrModal={() => setIsOcrModalOpen(true)}
             onGenerateEstimate={handleGenerateEstimate}
@@ -143,19 +149,6 @@ export default function App() {
             onOpenReviews={(pharmacy) => setSelectedPharmacyForReview(pharmacy)}
             currentUser={currentUser}
           />
-        )}
-
-        {currentView === 'chemist' && (
-          <ChemistDashboard
-            initialEstimateToken={chemistScannerToken}
-            onClearToken={() => setChemistScannerToken(null)}
-            activePharmacy={currentUser?.role === 'chemist' ? currentUser.pharmacy : null}
-            onSwitchToCustomer={() => setCurrentView('customer')}
-          />
-        )}
-
-        {currentView === 'architecture' && (
-          <ArchitectureDiagrams />
         )}
       </main>
 
@@ -177,13 +170,6 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 font-semibold text-slate-600">
-            <button
-              onClick={() => { playPop(); setCurrentView('architecture'); }}
-              className="hover:text-teal-700"
-            >
-              System Architecture & Diagrams
-            </button>
-            <span>•</span>
             <button
               onClick={() => { playPop(); handleOpenAuth('chemist'); }}
               className="hover:text-teal-700"

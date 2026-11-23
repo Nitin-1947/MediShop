@@ -54,7 +54,7 @@ export default function Navbar({
             </div>
             <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
               <MapPin className="w-3 h-3 text-teal-600" />
-              <span>Indiranagar 100ft Rd, Bengaluru</span>
+              <span>Real-Time Pharmacy Network</span>
             </div>
           </div>
         </div>
@@ -83,18 +83,6 @@ export default function Navbar({
           >
             <Store className="w-3.5 h-3.5 text-teal-600" />
             <span>Chemist Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => { playPop(); onChangeView('architecture'); }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-              currentView === 'architecture' 
-                ? 'bg-white text-teal-800 shadow-xs border border-slate-200' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5 text-teal-600" />
-            <span>Architecture & Specs</span>
           </button>
         </nav>
 
@@ -193,14 +181,6 @@ export default function Navbar({
           }`}
         >
           Chemist Dashboard
-        </button>
-        <button
-          onClick={() => { playPop(); onChangeView('architecture'); }}
-          className={`px-3 py-1.5 rounded-lg shrink-0 ${
-            currentView === 'architecture' ? 'bg-teal-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
-          }`}
-        >
-          Architecture & Specs
         </button>
       </div>
     </header>

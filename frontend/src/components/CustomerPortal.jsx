@@ -47,7 +47,7 @@ export default function CustomerPortal({
   const [estimationData, setEstimationData] = useState(null);
   const [isEstimating, setIsEstimating] = useState(false);
 
-  // User simulated location (Indiranagar 100ft road)
+  // User location coordinates
   const userLat = currentUser?.user?.lat || 12.9716;
   const userLng = currentUser?.user?.lng || 77.6412;
 
@@ -301,8 +301,8 @@ export default function CustomerPortal({
             <h2 className="text-lg font-bold text-slate-900">
               Verified Medicines in Your Radius ({medicines.length})
             </h2>
-            <span className="text-xs text-slate-500 font-medium">
-              Indiranagar Hub • Zone 560038
+            <span className="text-xs text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+              Verified Pharmacy Network
             </span>
           </div>
 

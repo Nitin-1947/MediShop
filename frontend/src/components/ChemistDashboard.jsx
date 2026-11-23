@@ -209,7 +209,7 @@ export default function ChemistDashboard({
           <div className="text-xs text-slate-300 flex flex-wrap items-center gap-3 font-medium">
             <span>Owner: <strong className="text-white">{pharmacyProfile?.owner_name || "Chirag Sharma"}</strong></span>
             <span>•</span>
-            <span>{pharmacyProfile?.address || "Indiranagar 100ft Road, Bengaluru"}</span>
+            <span>{pharmacyProfile?.address || "Licensed Pharmacy Counter"}</span>
             <span>•</span>
             <span className="text-teal-300">Flat Store Discount: {pharmacyProfile?.flat_store_discount || 14}%</span>
           </div>
