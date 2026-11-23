@@ -1787,7 +1787,20 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Medishop Connect Server running smoothly at http://localhost:${PORT}`);
-});
+// Start Server with resilient fallback
+function startServer(portToTry) {
+  const server = app.listen(portToTry, () => {
+    console.log(`🚀 Medishop Connect Server running smoothly at http://localhost:${portToTry}`);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = Number(portToTry) + 1;
+      console.log(`Port ${portToTry} in use, retrying on http://localhost:${nextPort}...`);
+      startServer(nextPort);
+    } else {
+      console.error("Server error:", err);
+    }
+  });
+}
+
+startServer(PORT);
