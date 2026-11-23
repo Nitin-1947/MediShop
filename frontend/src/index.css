@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  }
+}
+
+/* Custom Cartoon UI styles */
+.cartoon-card {
+  @apply bg-white border-2 border-slate-900 rounded-2xl shadow-cartoon transition-all duration-200;
+}
+
+.cartoon-card-hover {
+  @apply hover:-translate-y-1 hover:shadow-cartoon-lg active:translate-y-0 active:shadow-cartoon-sm;
+}
+
+.cartoon-btn {
+  @apply font-bold px-4 py-2 rounded-xl border-2 border-slate-900 shadow-cartoon transition-all duration-150 active:translate-y-1 active:shadow-none flex items-center justify-center gap-2;
+}
+
+.cartoon-btn-primary {
+  @apply cartoon-btn bg-bubble-400 text-slate-900 hover:bg-bubble-300;
+}
+
+.cartoon-btn-mint {
+  @apply cartoon-btn bg-mint-400 text-slate-900 hover:bg-mint-300;
+}
+
+.cartoon-btn-pink {
+  @apply cartoon-btn bg-medipink-400 text-white hover:bg-medipink-500;
+}
+
+.cartoon-btn-sunny {
+  @apply cartoon-btn bg-sunny-400 text-slate-900 hover:bg-sunny-300;
+}
+
+.cartoon-btn-secondary {
+  @apply cartoon-btn bg-white text-slate-800 hover:bg-slate-100;
+}
+
+.cartoon-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border-2 border-slate-900 shadow-cartoon-sm;
+}
+
+/* Custom playful scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-left: 2px solid #0F172A;
+}
+::-webkit-scrollbar-thumb {
+  background: #7DD3FC;
+  border: 2px solid #0F172A;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #38BDF8;
+}

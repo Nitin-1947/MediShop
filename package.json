@@ -1,0 +1,23 @@
+{
+  "name": "medishop-connect",
+  "version": "1.0.0",
+  "description": "Medishop Connect - Hyperlocal Medicine Discovery & Price Transparency",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test:api": "node backend/test_api.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "hyperlocal",
+    "pharmacy",
+    "medicine",
+    "price-transparency",
+    "postgis",
+    "ocr",
+    "cartoon-ui"
+  ],
+  "author": "Medishop Connect Team",
+  "license": "MIT"
+}
